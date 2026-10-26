@@ -1,0 +1,17 @@
+# 依存パッケージ・ビルド結果
+node_modules
+dist
+*.local
+
+# ログ
+*.log
+
+# エディタ・OS
+.vscode/*
+.idea
+.DS_Store
+
+# 打ち合わせの資料（リポジトリに含めない。要件定義書の写しは docs/requirements.md）
+*.pptx
+*ClaudeCode*.md
+*打ち合わせ*.txt
