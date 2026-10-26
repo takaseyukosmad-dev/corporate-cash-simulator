@@ -1,0 +1,11 @@
+// Cloudflare Workers（静的サイト）の設定。ビルドした dist/ をそのまま公開する
+// サーバー側の処理はない（計算・印刷はすべてブラウザの中で行う）
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "corporate-cash-simulator",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

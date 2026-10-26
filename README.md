@@ -49,6 +49,20 @@ npm run mock     # 確認用モック（mock/index.html）を作り直す
 - 色が出ないとき（Chrome）: 印刷画面の「詳細設定」で「背景のグラフィック」をオンにする
 - PDFにしたいとき: 印刷画面の送信先で「PDFに保存」を選ぶ
 
+## 公開（Cloudflare）
+
+元のアプリと同じく、Cloudflare Workers で静的サイトとして公開する。設定は `wrangler.jsonc`（ビルドした `dist/` をそのまま公開）。
+
+Cloudflare の画面で GitHub のリポジトリをつなぐ（最初に1回。ボタンの名前は変わることがある）:
+
+1. Cloudflare にログインし、「Workers & Pages」→「作成」を開く
+2. 「リポジトリをインポート」（Import a repository）を選び、GitHub との接続を許可する
+3. `corporate-cash-simulator` を選ぶ
+4. ビルドコマンドに `npm run build`、デプロイコマンドに `npx wrangler deploy` を入れて「デプロイ」を押す
+
+つないだあとは、GitHub の `main` に送るたびに自動で公開し直される。
+URL を知っている人は誰でも使える（パスワード・会員認証はまだない。別の段階で決める）。
+
 ## フォルダ構成
 
 | フォルダ | 内容 |

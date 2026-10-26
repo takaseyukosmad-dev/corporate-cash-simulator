@@ -1,6 +1,9 @@
 # 依存パッケージ・ビルド結果
 node_modules
 dist
+
+# Cloudflare（wrangler）の作業用フォルダ
+.wrangler
 *.local
 
 # ログ
