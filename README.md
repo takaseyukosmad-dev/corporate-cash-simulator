@@ -51,17 +51,26 @@ npm run mock     # 確認用モック（mock/index.html）を作り直す
 
 ## 公開（Cloudflare）
 
-元のアプリと同じく、Cloudflare Workers で静的サイトとして公開する。設定は `wrangler.jsonc`（ビルドした `dist/` をそのまま公開）。
+公開URL: https://corporate-cash-simulator.takase-yuko-smad.workers.dev
 
-Cloudflare の画面で GitHub のリポジトリをつなぐ（最初に1回。ボタンの名前は変わることがある）:
+元のアプリと同じく、Cloudflare Workers で静的サイトとして公開している。設定は `wrangler.jsonc`（ビルドした `dist/` をそのまま公開）。
+公開は、このMacから Cloudflare の公式の道具（wrangler）で行う。GitHub に送っても自動では公開し直されない。
 
-1. Cloudflare にログインし、「Workers & Pages」→「作成」を開く
-2. 「リポジトリをインポート」（Import a repository）を選び、GitHub との接続を許可する
-3. `corporate-cash-simulator` を選ぶ
-4. ビルドコマンドに `npm run build`、デプロイコマンドに `npx wrangler deploy` を入れて「デプロイ」を押す
+最初に1回だけ、Cloudflare にログインする（ブラウザが開くので、ログインして「許可」を押す）:
 
-つないだあとは、GitHub の `main` に送るたびに自動で公開し直される。
-URL を知っている人は誰でも使える（パスワード・会員認証はまだない。別の段階で決める）。
+```bash
+npx wrangler login
+```
+
+画面を直したら、テスト・ビルド・lint を通してから公開し直す:
+
+```bash
+npm run build
+npx wrangler deploy
+```
+
+- URL を知っている人は誰でも使える（パスワード・会員認証はまだない。別の段階で決める）
+- ログインした記録はこのMacに残る。要らなくなったら `npx wrangler logout` で消せる（Cloudflare の画面の「プロフィール」から許可を取り消すこともできる）
 
 ## フォルダ構成
 
