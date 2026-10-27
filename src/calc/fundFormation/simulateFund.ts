@@ -46,22 +46,24 @@ export function annualDcContribution(input: FundInput): number {
   return input.dc.members * input.dc.monthlyPerMember * 12
 }
 
-export const SCENARIO_KEYS: ScenarioKey[] = ['maturity', 'paidUp1', 'paidUp2']
+// 試算するケース。払済の年数が入っていれば「通常」と「払済」、なければ「通常」だけ（決定C19）
+export function scenarioKeys(input: Pick<FundInput, 'paidUpYears'>): ScenarioKey[] {
+  return input.paidUpYears === null ? ['maturity'] : ['maturity', 'paidUp']
+}
 
 export function scenarioLabel(key: ScenarioKey, input: Pick<FundInput, 'paidUpYears'>): string {
   if (key === 'maturity') return '通常（期間末まで払込）'
-  return `${input.paidUpYears[key === 'paidUp1' ? 0 : 1]}年で払済`
+  return `${input.paidUpYears}年で払済`
 }
 
 // 保険料を払う年数。払済年数が比較期間以上なら通常と同じ
 function premiumYearsFor(key: ScenarioKey, input: FundInput): number {
-  if (key === 'maturity') return input.years
-  return Math.min(input.years, input.paidUpYears[key === 'paidUp1' ? 0 : 1])
+  if (key === 'maturity' || input.paidUpYears === null) return input.years
+  return Math.min(input.years, input.paidUpYears)
 }
 
 function rateFor(plan: InsurancePlan, key: ScenarioKey): number | null {
-  if (key === 'maturity') return plan.maturityRate
-  return plan.paidUpRates[key === 'paidUp1' ? 0 : 1]
+  return key === 'maturity' ? plan.maturityRate : plan.paidUpRate
 }
 
 // 比較期間末の解約返戻金 = その時点までに払った保険料の合計 × 入力された返戻率。途中の年は計算しない（推測しない）
@@ -213,9 +215,8 @@ function warningsFor(input: FundInput, base: BaseYearRow[], scenarios: ScenarioR
     w.push('保険料とDCの会社負担の合計が、年間法人利益と役員報酬の減額の合計を超えています。払い続けられるか確認してください。')
   }
   if (usesInsurance(input)) {
-    input.paidUpYears.forEach((y) => {
-      if (y >= input.years) w.push(`払済の年数（${y}年）が比較期間（${input.years}年）以上のため、そのケースは通常と同じ払い方になります。`)
-    })
+    const y = input.paidUpYears
+    if (y !== null && y >= input.years) w.push(`払済の年数（${y}年）が比較期間（${input.years}年）以上のため、そのケースは通常と同じ払い方になります。`)
   }
   const dcMonthly = input.dc.monthlyPerMember
   if (input.dc.members > 0 && (dcMonthly < 3_000 || dcMonthly > 62_000)) {
@@ -234,7 +235,7 @@ export function simulateFund(input: FundInput): FundResult {
   const last = rows[rows.length - 1]
   // 対策なし: 保険・DCはない（保険評価額は0円）
   const baseTotals = totals(last.cashCumulative, last.taxCumulative, 0, 0, 0)
-  const scenarios = SCENARIO_KEYS.map((key) => scenario(key, input, siSaving, baseTotals))
+  const scenarios = scenarioKeys(input).map((key) => scenario(key, input, siSaving, baseTotals))
   return {
     base: { rows, totals: baseTotals, firstYear: rows[0] },
     scenarios,

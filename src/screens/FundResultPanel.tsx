@@ -9,7 +9,7 @@ import { type Column, columnsFor, NOT_ENTERED } from './fundColumns.ts'
 // 右側（結果）。概要KPI → グラフ → 明細テーブル → 計算根拠 の順（要件定義 5章）
 // 結論・概要・グラフ・比較表・根拠・前提は、印刷（FundPrint.tsx）でも同じ部品を使う
 
-const SCENARIO_CLASS = { maturity: 'fl-1', paidUp1: 'fl-2', paidUp2: 'fl-3' } as const
+const SCENARIO_CLASS = { maturity: 'fl-1', paidUp: 'fl-2' } as const
 
 const yen = (v: number | null) => (v === null ? NOT_ENTERED : formatYen(v))
 const signed = (v: number | null) => (v === null ? NOT_ENTERED : formatSignedYen(v))

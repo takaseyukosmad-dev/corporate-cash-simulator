@@ -22,7 +22,7 @@ export type InsurancePlan = {
   // 返戻率は「その時点までに払った保険料の合計」に対する解約返戻金の割合（%）。保険設計書の値を手入力する。
   // 未入力（null）のときは解約返戻金を計算しない
   maturityRate: number | null // 通常ケース（比較期間末まで払い込む）の比較期間末の返戻率
-  paidUpRates: [number | null, number | null] // 払済ケース1・2の比較期間末の返戻率
+  paidUpRate: number | null // 払済ケースの比較期間末の返戻率
 }
 
 // 役員報酬の減額（任意）
@@ -44,10 +44,11 @@ export type FundInput = {
   welfare: InsurancePlan // 福利厚生保険
   officer: InsurancePlan // 役員保険
   payCut: PayCut
-  paidUpYears: [number, number] // 払済ケース1・2で保険料を払う年数（例: 5年・10年）
+  // 払済ケースで保険料を払う年数（福利厚生保険・役員保険で共通。決定C2）。null なら払済ケースを試算しない（決定C19）
+  paidUpYears: number | null
 }
 
-export type ScenarioKey = 'maturity' | 'paidUp1' | 'paidUp2'
+export type ScenarioKey = 'maturity' | 'paidUp'
 
 // 対策あり 1年分
 export type FundYearRow = {
@@ -100,7 +101,7 @@ export type FundTotals = {
 
 export type ScenarioResult = {
   key: ScenarioKey
-  label: string // 通常満期 ／ 5年払済 など
+  label: string // 通常（期間末まで払込） ／ 10年で払済 など
   premiumYears: { welfare: number; officer: number }
   rows: FundYearRow[]
   welfare: InsuranceOutcome | null // 使わない保険は null

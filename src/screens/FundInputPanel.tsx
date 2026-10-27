@@ -45,7 +45,7 @@ function Num({ id, label, unit, help, decimal, props }: { id: FundField; label: 
   )
 }
 
-function Toggle({ id, label, props }: { id: 'welfareEnabled' | 'officerEnabled' | 'payCutEnabled'; label: string; props: Props }) {
+function Toggle({ id, label, props }: { id: 'welfareEnabled' | 'officerEnabled' | 'payCutEnabled' | 'paidUpEnabled'; label: string; props: Props }) {
   return (
     <label className="fund-toggle" htmlFor={`fund-${id}`}>
       <input id={`fund-${id}`} type="checkbox" checked={props.values[id]} onChange={(e) => props.onChange(id, e.target.checked)} />
@@ -57,8 +57,10 @@ function Toggle({ id, label, props }: { id: 'welfareEnabled' | 'officerEnabled' 
 function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'officer'; title: string; lead: string; props: Props }) {
   const enabled = prefix === 'welfare' ? props.values.welfareEnabled : props.values.officerEnabled
   const f = (suffix: string) => `${prefix}${suffix}` as FundField
-  const y1 = props.values.paidUp1Years || '—'
-  const y2 = props.values.paidUp2Years || '—'
+  // 払済のチェックと年数は、使っている保険のうち上の欄（福利厚生保険を使わないときは役員保険）に1つだけ出す（年数は共通。決定C2・C19）
+  const ownsPaidUp = prefix === 'welfare' || !props.values.welfareEnabled
+  const paidUp = props.values.paidUpEnabled
+  const years = props.values.paidUpYears.trim() || '—'
   return (
     <section className="input-group">
       <h2>{title}</h2>
@@ -78,8 +80,27 @@ function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'o
           <p className="fund-sub-title">比較期間末の解約返戻率（保険設計書の値を入力）</p>
           <p className="help">その時点までに払った保険料の合計に対する割合です。空欄のケースは解約返戻金を計算しません（推測しません）。</p>
           <Num id={f('MaturityRate')} label="通常（期間末まで払込）" unit="%" decimal props={props} />
-          <Num id={f('PaidUp1Rate')} label={`${y1}年で払済`} unit="%" decimal props={props} />
-          <Num id={f('PaidUp2Rate')} label={`${y2}年で払済`} unit="%" decimal props={props} />
+          {ownsPaidUp ? (
+            <>
+              <Toggle id="paidUpEnabled" label="払済保険の場合を試算する" props={props} />
+              {paidUp && (
+                <>
+                  <Num
+                    id="paidUpYears"
+                    label="払込年数"
+                    unit="年"
+                    help={`保険料をこの年数だけ払い、その後は払込を止めた場合を、通常と並べて比べます。${prefix === 'welfare' ? '役員保険も同じ年数で計算します。' : ''}`}
+                    props={props}
+                  />
+                  <Num id={f('PaidUpRate')} label={`${years}年で払済の場合`} unit="%" decimal props={props} />
+                </>
+              )}
+            </>
+          ) : paidUp ? (
+            <Num id={f('PaidUpRate')} label={`${years}年で払済の場合（年数は福利厚生保険と同じ）`} unit="%" decimal props={props} />
+          ) : (
+            <p className="help">払済の場合を試算するときは、福利厚生保険の欄でチェックを入れてください（年数は共通です）。</p>
+          )}
         </div>
       )}
     </section>
@@ -88,7 +109,6 @@ function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'o
 
 export function FundInputPanel(props: Props) {
   const { values, onChange, onBlur } = props
-  const anyInsurance = values.welfareEnabled || values.officerEnabled
   return (
     <aside className="input-panel" aria-label="条件入力">
       <p className="panel-title">条件入力</p>
@@ -144,15 +164,6 @@ export function FundInputPanel(props: Props) {
 
       <InsuranceGroup prefix="welfare" title="福利厚生保険" lead="法人契約（解約返戻金は法人のもの）として計算します。" props={props} />
       <InsuranceGroup prefix="officer" title="役員保険" lead="法人契約（解約返戻金は法人のもの）として計算します。" props={props} />
-
-      {anyInsurance && (
-        <section className="input-group">
-          <h2>払済ケース</h2>
-          <p className="help">保険料をこの年数だけ払い、その後は払込を止めたケースを、通常のケースと並べて比較します。</p>
-          <Num id="paidUp1Years" label="払済ケース1: 払込年数" unit="年" props={props} />
-          <Num id="paidUp2Years" label="払済ケース2: 払込年数" unit="年" props={props} />
-        </section>
-      )}
 
       <section className="input-group">
         <h2>役員報酬減額（任意）</h2>

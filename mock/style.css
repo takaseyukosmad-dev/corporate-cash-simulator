@@ -746,6 +746,6 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }
 .print-page table.fund-table { font-size: 9.5px; }
 .print-page table.fund-table th,
-.print-page table.fund-table td { padding: 0.6mm 2mm; line-height: 1.35; }
+.print-page table.fund-table td { padding: 0.4mm 2mm; line-height: 1.35; }
 .print-page table.fund-table thead th { font-size: 9.5px; }
 .print-page .warning { padding: 1.5mm 3mm; font-size: 9.5px; }

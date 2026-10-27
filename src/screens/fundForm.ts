@@ -17,16 +17,14 @@ export type FundFormValues = {
   welfarePremiumMan: string
   welfareDeductible: string
   welfareMaturityRate: string
-  welfarePaidUp1Rate: string
-  welfarePaidUp2Rate: string
+  welfarePaidUpRate: string
   officerEnabled: boolean
   officerPremiumMan: string
   officerDeductible: string
   officerMaturityRate: string
-  officerPaidUp1Rate: string
-  officerPaidUp2Rate: string
-  paidUp1Years: string
-  paidUp2Years: string
+  officerPaidUpRate: string
+  paidUpEnabled: boolean // 払済保険の場合を試算する（決定C19）
+  paidUpYears: string // 払済の払込年数（福利厚生保険・役員保険で共通。決定C2）
   payCutEnabled: boolean
   payCutOfficers: string
   payCutMode: 'perOfficer' | 'total' // 1人あたり月額で入れる ／ 年間の総額で入れる
@@ -53,16 +51,14 @@ export const EMPTY_FUND_FORM: FundFormValues = {
   welfarePremiumMan: '',
   welfareDeductible: '',
   welfareMaturityRate: '',
-  welfarePaidUp1Rate: '',
-  welfarePaidUp2Rate: '',
+  welfarePaidUpRate: '',
   officerEnabled: false,
   officerPremiumMan: '',
   officerDeductible: '',
   officerMaturityRate: '',
-  officerPaidUp1Rate: '',
-  officerPaidUp2Rate: '',
-  paidUp1Years: '5',
-  paidUp2Years: '10',
+  officerPaidUpRate: '',
+  paidUpEnabled: false,
+  paidUpYears: '',
   payCutEnabled: false,
   payCutOfficers: '',
   payCutMode: 'perOfficer',
@@ -88,8 +84,9 @@ export const DEMO_FUND_FORM: FundFormValues = {
   welfarePremiumMan: '1,000',
   welfareDeductible: '50',
   welfareMaturityRate: '150',
-  welfarePaidUp1Rate: '', // 資料に例がないため空欄（設計書の値を入れる）
-  welfarePaidUp2Rate: '200',
+  paidUpEnabled: true,
+  paidUpYears: '10', // 資料の例（福利厚生保険20年継続と10年払済の比較）
+  welfarePaidUpRate: '200',
   payCutEnabled: true,
   payCutOfficers: '1',
   payCutMonthly: '500,000',
@@ -112,15 +109,12 @@ const RULES: Partial<Record<FundField, Rule>> = {
   welfarePremiumMan: { label: '年間保険料', min: 0, max: 99_999, decimals: 1 },
   welfareDeductible: { label: '損金割合', min: 0, max: 100, decimals: 1 },
   welfareMaturityRate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
-  welfarePaidUp1Rate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
-  welfarePaidUp2Rate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
+  welfarePaidUpRate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
   officerPremiumMan: { label: '年間保険料', min: 0, max: 99_999, decimals: 1 },
   officerDeductible: { label: '損金割合', min: 0, max: 100, decimals: 1 },
   officerMaturityRate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
-  officerPaidUp1Rate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
-  officerPaidUp2Rate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
-  paidUp1Years: { label: '払済の年数', min: 1, max: 50, decimals: 0 },
-  paidUp2Years: { label: '払済の年数', min: 1, max: 50, decimals: 0 },
+  officerPaidUpRate: { label: '返戻率', min: 0, max: 1000, decimals: 1, optional: true },
+  paidUpYears: { label: '払済の払込年数', min: 1, max: 50, decimals: 0 },
   payCutOfficers: { label: '減額する役員の人数', min: 1, max: 50, decimals: 0 },
   payCutMonthly: { label: '1人あたり月額減額', min: 0, max: 99_999_999, decimals: 0 },
   payCutTotalMan: { label: '年間の総減額', min: 0, max: 99_999, decimals: 1 },
@@ -128,8 +122,11 @@ const RULES: Partial<Record<FundField, Rule>> = {
   payCutAge: { label: '年齢', min: 15, max: 100, decimals: 0 },
 }
 
-const WELFARE_FIELDS: FundField[] = ['welfarePremiumMan', 'welfareDeductible', 'welfareMaturityRate', 'welfarePaidUp1Rate', 'welfarePaidUp2Rate']
-const OFFICER_FIELDS: FundField[] = ['officerPremiumMan', 'officerDeductible', 'officerMaturityRate', 'officerPaidUp1Rate', 'officerPaidUp2Rate']
+const WELFARE_FIELDS: FundField[] = ['welfarePremiumMan', 'welfareDeductible', 'welfareMaturityRate']
+const OFFICER_FIELDS: FundField[] = ['officerPremiumMan', 'officerDeductible', 'officerMaturityRate']
+
+// 払済ケースを試算するか（保険を1つ以上使い、「払済保険の場合を試算する」にチェックがあるとき）
+export const paidUpOn = (v: FundFormValues) => (v.welfareEnabled || v.officerEnabled) && v.paidUpEnabled
 // 役員報酬の減額の1人あたり月額（年間の総額で入れたときは 総額 ÷ 12か月 ÷ 人数）。入力が足りなければ null
 export function monthlyCutPerOfficer(v: FundFormValues): number | null {
   if (v.payCutMode === 'perOfficer') return parseNumber(v.payCutMonthly)
@@ -171,7 +168,11 @@ export function validateFundForm(v: FundFormValues): Partial<Record<FundField, s
   if (dcMembers > 0) fields.push('dcMonthly')
   if (v.welfareEnabled) fields.push(...WELFARE_FIELDS)
   if (v.officerEnabled) fields.push(...OFFICER_FIELDS)
-  if (v.welfareEnabled || v.officerEnabled) fields.push('paidUp1Years', 'paidUp2Years')
+  if (paidUpOn(v)) {
+    fields.push('paidUpYears')
+    if (v.welfareEnabled) fields.push('welfarePaidUpRate')
+    if (v.officerEnabled) fields.push('officerPaidUpRate')
+  }
   if (v.payCutEnabled) {
     fields.push('payCutOfficers', v.payCutMode === 'perOfficer' ? 'payCutMonthly' : 'payCutTotalMan', 'payCutPayBefore')
     if (v.payCutPayBefore.trim() !== '') fields.push('payCutAge')
@@ -205,7 +206,7 @@ function insurance(v: FundFormValues, prefix: 'welfare' | 'officer'): InsuranceP
     annualPremium: num(get('PremiumMan')) * MAN,
     deductibleRate: num(get('Deductible')),
     maturityRate: optional(get('MaturityRate')),
-    paidUpRates: [optional(get('PaidUp1Rate')), optional(get('PaidUp2Rate'))],
+    paidUpRate: paidUpOn(v) ? optional(get('PaidUpRate')) : null,
   }
 }
 
@@ -235,6 +236,6 @@ export function toFundInput(v: FundFormValues): FundInput | null {
         ? { payBefore: num(v.payCutPayBefore), age: num(v.payCutAge), prefecture: v.payCutPrefecture as Prefecture }
         : null,
     },
-    paidUpYears: [num(v.paidUp1Years), num(v.paidUp2Years)],
+    paidUpYears: paidUpOn(v) ? num(v.paidUpYears) : null,
   }
 }

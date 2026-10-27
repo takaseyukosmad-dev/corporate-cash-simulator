@@ -45,7 +45,8 @@ function PrintPage({ no, children }: { no: number; children: ReactNode }) {
 const insuranceText = (plan: InsurancePlan, input: FundInput) => {
   if (!plan.enabled) return '使わない'
   const rate = (r: number | null) => (r === null ? '未入力' : formatRate(r))
-  return `年間保険料 ${formatManYen(plan.annualPremium)}・損金割合 ${formatRate(plan.deductibleRate)}・返戻率 通常 ${rate(plan.maturityRate)}／${input.paidUpYears[0]}年で払済 ${rate(plan.paidUpRates[0])}／${input.paidUpYears[1]}年で払済 ${rate(plan.paidUpRates[1])}`
+  const paidUp = input.paidUpYears === null ? '' : `／${input.paidUpYears}年で払済 ${rate(plan.paidUpRate)}`
+  return `年間保険料 ${formatManYen(plan.annualPremium)}・損金割合 ${formatRate(plan.deductibleRate)}・返戻率 通常 ${rate(plan.maturityRate)}${paidUp}`
 }
 
 // 4ページ目「比較条件」: 入力した値
@@ -130,9 +131,7 @@ export function FundPrint({
               {insurance ? (
                 <>
                   <li>対策あり（通常）：DC・保険・役員報酬の見直しを、保険料を期間の最後まで払う形で組み合わせた場合</li>
-                  <li>
-                    対策あり（{input.paidUpYears[0]}年で払済／{input.paidUpYears[1]}年で払済）：保険料をその年数で払い終えた場合
-                  </li>
+                  {input.paidUpYears !== null && <li>対策あり（{input.paidUpYears}年で払済）：保険料をその年数で払い終えた場合</li>}
                 </>
               ) : (
                 <li>対策あり：DC・役員報酬の見直しを組み合わせた場合</li>

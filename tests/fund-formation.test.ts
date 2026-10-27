@@ -6,7 +6,7 @@ import { monthlySocialInsurance } from '../src/calc/tax/socialInsurance.ts'
 
 // 受け入れテスト（要件定義 6章）
 
-const noInsurance: InsurancePlan = { enabled: false, annualPremium: 0, deductibleRate: 0, maturityRate: null, paidUpRates: [null, null] }
+const noInsurance: InsurancePlan = { enabled: false, annualPremium: 0, deductibleRate: 0, maturityRate: null, paidUpRate: null }
 
 const zero: FundInput = {
   annualProfit: 30_000_000,
@@ -16,7 +16,7 @@ const zero: FundInput = {
   welfare: noInsurance,
   officer: noInsurance,
   payCut: { enabled: false, officers: 0, monthlyCutPerOfficer: 0, socialInsurance: null },
-  paidUpYears: [5, 10],
+  paidUpYears: 5,
 }
 
 const welfare = (overrides: Partial<InsurancePlan> = {}): InsurancePlan => ({
@@ -24,7 +24,7 @@ const welfare = (overrides: Partial<InsurancePlan> = {}): InsurancePlan => ({
   annualPremium: 10_000_000,
   deductibleRate: 50,
   maturityRate: 150,
-  paidUpRates: [300, 200],
+  paidUpRate: 300,
   ...overrides,
 })
 
@@ -90,7 +90,7 @@ describe('3. 損金割合0%と50%', () => {
 
 describe('4. 5年払済', () => {
   const r = simulateFund({ ...zero, welfare: welfare() })
-  const paidUp5 = r.scenarios.find((s) => s.key === 'paidUp1')!
+  const paidUp5 = r.scenarios.find((s) => s.key === 'paidUp')!
   it('6年目以降の保険料は0', () => {
     expect(paidUp5.rows.slice(0, 5).every((x) => x.welfarePremium === 10_000_000)).toBe(true)
     expect(paidUp5.rows.slice(5).every((x) => x.welfarePremium === 0)).toBe(true)
@@ -104,15 +104,20 @@ describe('4. 5年払済', () => {
     expect(r.scenarios[0].welfare?.surrenderValue).toBe(300_000_000)
   })
   it('返戻率が未入力なら解約返戻金を推測しない（null）', () => {
-    const s = simulateFund({ ...zero, welfare: welfare({ paidUpRates: [null, 200] }) }).scenarios[1]
+    const s = simulateFund({ ...zero, welfare: welfare({ paidUpRate: null }) }).scenarios[1]
     expect(s.welfare?.surrenderValue).toBeNull()
     expect(s.totals.insurance).toBeNull()
     expect(s.totals.corporateAssets).toBeNull()
     expect(s.totals.cash).toBeGreaterThan(0) // 現金は計算できる
   })
+  it('払済の年数がない（払済を試算しない）ときは、通常のケースだけを計算する（決定C19）', () => {
+    const res = simulateFund({ ...zero, welfare: welfare(), paidUpYears: null })
+    expect(res.scenarios.map((s) => s.key)).toEqual(['maturity'])
+    expect(res.scenarios[0].welfare?.surrenderValue).toBe(300_000_000)
+  })
   it('払済年数が比較期間以上なら通常と同じ払い方で注意を出す', () => {
-    const res = simulateFund({ ...zero, years: 10, welfare: welfare(), paidUpYears: [5, 15] })
-    expect(res.scenarios[2].premiumYears.welfare).toBe(10)
+    const res = simulateFund({ ...zero, years: 10, welfare: welfare(), paidUpYears: 15 })
+    expect(res.scenarios[1].premiumYears.welfare).toBe(10)
     expect(res.warnings.some((w) => w.message.includes('15年'))).toBe(true)
   })
 })
@@ -155,7 +160,7 @@ describe('7. 二重計上がない', () => {
     ...zero,
     dc: { members: 3, monthlyPerMember: 30_000, annualReturnRate: 4, contributionYears: 20, funding: 'employer' },
     welfare: welfare(),
-    officer: { enabled: true, annualPremium: 3_000_000, deductibleRate: 40, maturityRate: 90, paidUpRates: [null, 120] },
+    officer: { enabled: true, annualPremium: 3_000_000, deductibleRate: 40, maturityRate: 90, paidUpRate: 120 },
     payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 300_000, socialInsurance: { payBefore: 1_000_000, age: 55, prefecture: '大阪府' } },
   }
   const r = simulateFund(input)
@@ -213,7 +218,7 @@ describe('打ち合わせの例（2026-10-23）: 報酬減額＋保険の法人�
     const s = simulateFund({
       ...zero,
       payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 500_000, socialInsurance: null },
-      officer: { enabled: true, annualPremium: 6_000_000, deductibleRate: 50, maturityRate: null, paidUpRates: [null, null] },
+      officer: { enabled: true, annualPremium: 6_000_000, deductibleRate: 50, maturityRate: null, paidUpRate: null },
     }).scenarios[0]
     expect(s.firstYear.corporateTax - 9_000_000).toBeCloseTo(900_000, 6)
   })

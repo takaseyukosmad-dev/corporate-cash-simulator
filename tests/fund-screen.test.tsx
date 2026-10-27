@@ -11,9 +11,44 @@ describe('入力欄 → 計算用の入力', () => {
     expect(validateFundForm(EMPTY_FUND_FORM).annualProfitMan).toBeDefined()
   })
   it('開いたときの保険の返戻率は空欄（推測した値を入れない）', () => {
-    for (const k of ['welfareMaturityRate', 'welfarePaidUp1Rate', 'welfarePaidUp2Rate', 'officerMaturityRate', 'officerPaidUp1Rate', 'officerPaidUp2Rate'] as const) {
+    for (const k of ['welfareMaturityRate', 'welfarePaidUpRate', 'officerMaturityRate', 'officerPaidUpRate'] as const) {
       expect(EMPTY_FUND_FORM[k]).toBe('')
     }
+  })
+  it('払済は「払済保険の場合を試算する」にチェックを入れたときだけ、1つの年数で試算する（決定C19）', () => {
+    const base = { ...EMPTY_FUND_FORM, annualProfitMan: '3000', welfareEnabled: true, welfarePremiumMan: '100', welfareDeductible: '50' }
+    expect(EMPTY_FUND_FORM.paidUpEnabled).toBe(false)
+    expect(toFundInput(base)!.paidUpYears).toBeNull()
+    expect(simulateFund(toFundInput(base)!).scenarios).toHaveLength(1)
+    const on = { ...base, paidUpEnabled: true }
+    expect(validateFundForm(on).paidUpYears).toBeDefined() // チェックを入れたら年数が必要
+    const input = toFundInput({ ...on, paidUpYears: '7', welfarePaidUpRate: '120' })!
+    expect(input.paidUpYears).toBe(7)
+    expect(input.welfare.paidUpRate).toBe(120)
+    expect(simulateFund(input).scenarios.map((s) => s.label)).toEqual(['通常（期間末まで払込）', '7年で払済'])
+  })
+  it('役員保険も福利厚生保険と同じ払済年数で、返戻率だけ役員保険の欄の値を使う（決定C2・C19）', () => {
+    const input = toFundInput({
+      ...EMPTY_FUND_FORM,
+      annualProfitMan: '3000',
+      welfareEnabled: true,
+      welfarePremiumMan: '100',
+      welfareDeductible: '50',
+      officerEnabled: true,
+      officerPremiumMan: '50',
+      officerDeductible: '40',
+      officerPaidUpRate: '110',
+      paidUpEnabled: true,
+      paidUpYears: '5',
+    })!
+    const paidUp = simulateFund(input).scenarios[1]
+    expect(paidUp.premiumYears).toEqual({ welfare: 5, officer: 5 })
+    expect(paidUp.officer?.rate).toBe(110)
+  })
+  it('チェックを外すと、払済の年数・返戻率が入っていても使わない', () => {
+    const input = toFundInput({ ...DEMO_FUND_FORM, paidUpEnabled: false })!
+    expect(input.paidUpYears).toBeNull()
+    expect(input.welfare.paidUpRate).toBeNull()
   })
   it('万円の入力を円にする。DC拠出期間が空欄なら比較期間と同じ', () => {
     const input = toFundInput({ ...EMPTY_FUND_FORM, annualProfitMan: '3,000', dcMembers: '2', dcMonthly: '62000' })!
@@ -85,7 +120,9 @@ describe('8. 未確定の値を「保証」と表示しない', () => {
     expect(text).toContain('DC加入者資産（個人')
   })
   it('返戻率が未入力のケースは金額を出さず「返戻率未入力」と表示する', () => {
-    expect(text).toContain('返戻率未入力') // デモの5年払済は返戻率が空欄
+    const blank = toFundInput({ ...DEMO_FUND_FORM, welfarePaidUpRate: '' })!
+    const t = renderToStaticMarkup(<FundResultPanel input={blank} result={simulateFund(blank)} showReference={false} onShowReferenceChange={() => {}} />)
+    expect(t).toContain('返戻率未入力')
   })
 })
 
