@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { annualDcContribution, annualPayCut } from '../calc/fundFormation/simulateFund.ts'
+import { annualDcContribution, annualPayCut, profitIn } from '../calc/fundFormation/simulateFund.ts'
 import type { FundInput, FundResult, FundYearRow, InsuranceOutcome, ScenarioResult } from '../calc/fundFormation/types.ts'
 import { formatMan, formatRate, formatSignedYen, formatYen } from '../shared/format.ts'
 import { formatManYen, formatSignedManYen } from '../shared/money.ts'
@@ -307,6 +307,81 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
   )
 }
 
+// 1年目の計算の流れ（決定C23）。対策前の利益から足し引きして、課税対象利益・法人税・現金の増加がなぜその額になるかを示す。
+// 数字は「対策あり」の最初のケース（通常）の1年目。使っていない対策の行は出さない
+export function FirstYearFlow({ columns, input, result }: { columns: Column[]; input: FundInput; result: FundResult }) {
+  const r = columns[1].scenario!.firstYear
+  const premiums = r.welfarePremium + r.officerPremium
+  const rows: { sign: string; label: string; amount: number; note?: string; total?: boolean }[] = [
+    { sign: '', label: '対策前の利益', amount: profitIn(input, 1) },
+    ...(input.payCut.enabled
+      ? [
+          { sign: '＋', label: '役員報酬の減額', amount: r.payCut, note: '役員報酬は会社の経費です。減らすと経費が減るので、課税対象利益は増えます。' },
+          {
+            sign: '＋',
+            label: '会社負担の社会保険料の減少',
+            amount: r.socialInsuranceSaving,
+            note: result.socialInsuranceComputed
+              ? '会社が払う社会保険料も経費です。報酬を減らすと負担が下がって経費が減るので、課税対象利益は増えます（その分、会社の現金も増えます）。'
+              : '減額前の報酬月額などを入れると計算します（今は0円）。',
+          },
+        ]
+      : []),
+    ...(r.dcCompanyCost > 0
+      ? [{ sign: '−', label: 'DC掛金', amount: r.dcCompanyCost, note: '会社が出すDC掛金は全額経費になるので、課税対象利益を減らします。掛金は加入者個人の資産になります。' }]
+      : []),
+    ...(premiums > 0
+      ? [
+          {
+            sign: '−',
+            label: '保険料のうち経費にできる分',
+            amount: r.deductibleInsurance,
+            note:
+              premiums - r.deductibleInsurance > 0
+                ? `保険料は損金割合の分だけ経費になり、課税対象利益を減らします。残りの ${formatYen(premiums - r.deductibleInsurance)}は経費にならず、法人税がかかります。`
+                : '保険料は損金割合の分だけ経費になり、課税対象利益を減らします。',
+          },
+        ]
+      : []),
+    { sign: '＝', label: '課税対象利益（概算）', amount: r.taxableIncome, total: true },
+    {
+      sign: '',
+      label: '法人税（概算）',
+      amount: r.corporateTax,
+      note: r.taxableIncome < 0 ? '課税対象利益がマイナスのため、法人税は0円としています。' : `課税対象利益 × 法人実効税率 ${formatRate(input.corporateTaxRate)}`,
+    },
+    {
+      sign: '',
+      label: '法人の現金の増加',
+      amount: r.cashFlow,
+      total: true,
+      note: [
+        '対策前の利益',
+        ...(input.payCut.enabled ? ['＋ 報酬減額 ＋ 社保の減少'] : []),
+        ...(r.dcCompanyCost > 0 ? ['− DC掛金'] : []),
+        ...(premiums > 0 ? [`− 保険料（全額 ${formatYen(premiums)}）`] : []),
+        `− 法人税${premiums > 0 ? '。経費にならない保険料も、現金からは出ていきます。' : ''}`,
+      ].join(' '),
+    },
+  ]
+  return (
+    <table className="fund-flow">
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.label} className={row.total ? 'total' : undefined}>
+            <th scope="row">
+              {row.sign && <span className="fund-flow-sign">{row.sign}</span>}
+              {row.label}
+            </th>
+            <td className="fund-flow-amount">{formatYen(row.amount)}</td>
+            <td className="fund-flow-note">{row.note ?? ''}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 // 期間末の資産のグラフと凡例
 export function AssetChart({ columns, years }: { columns: Column[]; years: number }) {
   return (
@@ -418,6 +493,13 @@ export function FundResultPanel({
           参考総額（法人保有＋DC加入者資産）も表示する
         </label>
         <CompareTable columns={columns} years={years} showReference={showReference} personalSi={result.annualPersonalSocialInsuranceSaving} />
+      </section>
+
+      <section className="card table-card">
+        <h2>
+          1年目の計算の流れ<span className="period">{columns[1].label}の1年目。課税対象利益・法人税・現金の増加が、なぜこの額になるか</span>
+        </h2>
+        <FirstYearFlow columns={columns} input={input} result={result} />
       </section>
 
       <section className="card table-card">

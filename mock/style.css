@@ -646,6 +646,14 @@ ul.plain li:last-child { margin-bottom: 0; }
 .fund-swatch.dc { background: var(--fund-dc); }
 
 .fund-table-wrap { overflow-x: auto; margin-bottom: 12px; }
+table.fund-flow { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.fund-flow th, table.fund-flow td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.fund-flow th { text-align: left; font-weight: 400; white-space: nowrap; }
+table.fund-flow tr.total th, table.fund-flow tr.total td.fund-flow-amount { font-weight: 800; color: var(--navy-dark); }
+table.fund-flow tr.total { background: var(--navy-tint); }
+.fund-flow-sign { display: inline-block; width: 1.4em; font-weight: 800; color: var(--navy); }
+.fund-flow-amount { text-align: right; white-space: nowrap; }
+.fund-flow-note { color: var(--muted); font-size: 12px; line-height: 1.6; }
 table.fund-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
 table.fund-table th, table.fund-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
 table.fund-table thead th { background: var(--navy); color: #fff; font-size: 12px; text-align: right; white-space: nowrap; }
@@ -722,6 +730,10 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-title p { margin: 0; flex-shrink: 0; color: #dce8fb; font-size: 10px; }
 .print-heading { margin: 0 0 3mm; padding-bottom: 1mm; font-size: 15px; color: var(--navy); border-bottom: 1.5px solid var(--navy); }
 .print-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.print-flow-cols { columns: 2; column-gap: 6mm; }
+.print-flow-cols h3 { break-after: avoid; }
+.print-flow-cols table, .print-flow-cols li, .print-flow-cols .warning, .print-flow-cols dl > div { break-inside: avoid; }
+.print-flow-cols > :first-child { margin-top: 0; }
 .print-page h3 { margin: 3mm 0 1mm; font-size: 12px; color: var(--navy); }
 .print-page p { margin: 0 0 1.5mm; }
 .print-page ul.plain li { margin-bottom: 1mm; }
@@ -744,7 +756,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .fund-kpi { padding: 2mm 3mm; }
 .print-page .fund-kpi-value { font-size: 16px; }
 .print-page .fund-kpi-note { font-size: 9.5px; }
-.print-page svg.chart { min-width: 0; max-height: 52mm; }
+.print-page svg.chart { min-width: 0; max-height: 50mm; }
 .print-page .legend { margin-top: 1mm; font-size: 9.5px; gap: 1mm 4mm; }
 .print-page .muted { font-size: 9.5px; }
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }
@@ -753,3 +765,8 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page table.fund-table td { padding: 0.4mm 2mm; line-height: 1.35; }
 .print-page table.fund-table thead th { font-size: 9.5px; }
 .print-page .warning { padding: 1.5mm 3mm; font-size: 9.5px; }
+.print-page table.fund-flow { font-size: 9px; }
+.print-page table.fund-flow th,
+.print-page table.fund-flow td { padding: 0.3mm 1.5mm; line-height: 1.35; }
+.print-page .fund-flow-note { font-size: 8px; line-height: 1.35; }
+.print-page table.fund-flow th { white-space: normal; width: 24%; }

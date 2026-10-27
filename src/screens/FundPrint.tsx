@@ -4,7 +4,7 @@ import { APP_NAME, LOGO_WHITE } from '../shared/appInfo.ts'
 import { formatDate, formatPercent, formatRate, formatYen } from '../shared/format.ts'
 import { formatManYen } from '../shared/money.ts'
 import { columnsFor, usesInsurance } from './fundColumns.ts'
-import { AssetChart, AssumptionList, BasisList, CashChart, CompareTable, Conclusion, Kpis, WarningList } from './FundResultPanel.tsx'
+import { AssetChart, AssumptionList, BasisList, CashChart, CompareTable, Conclusion, FirstYearFlow, Kpis, WarningList } from './FundResultPanel.tsx'
 
 // 印刷用の表示（決定C14・C17・C18）。画面には出さず、印刷するときだけ使う（styles.css の @media print）
 // 元のアプリ（役員報酬・退職金 比較シミュレーター）の提案資料PDFを参考にした A4横4ページ。年次の明細は入れない
@@ -169,26 +169,25 @@ export function FundPrint({
       </PrintPage>
 
       <PrintPage no={4}>
-        <h2 className="print-heading">比較条件・計算の根拠・前提・ご注意</h2>
-        <div className="print-cols">
-          <div>
-            <h3>比較条件</h3>
-            <Conditions companyName={companyName} input={input} />
-            <h3>計算の根拠</h3>
-            <BasisList input={input} result={result} />
-          </div>
-          <div>
-            <h3>注意</h3>
-            <WarningList result={result} />
-            <h3>計算の前提・計算していないこと</h3>
-            <AssumptionList />
-            <h3>ご注意</h3>
-            <ul className="plain print-disclaimer">
-              {DISCLAIMER.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
-          </div>
+        <h2 className="print-heading">比較条件・1年目の計算の流れ・計算の根拠・前提・ご注意</h2>
+        {/* 2段組みで流し込む（注意の数で長さが変わっても、左右の段に振り分けて1ページに収める） */}
+        <div className="print-flow-cols">
+          <h3>比較条件</h3>
+          <Conditions companyName={companyName} input={input} />
+          <h3>1年目の計算の流れ（{columns[1].label}）</h3>
+          <FirstYearFlow columns={columns} input={input} result={result} />
+          <h3>計算の根拠</h3>
+          <BasisList input={input} result={result} />
+          <h3>注意</h3>
+          <WarningList result={result} />
+          <h3>計算の前提・計算していないこと</h3>
+          <AssumptionList />
+          <h3>ご注意</h3>
+          <ul className="plain print-disclaimer">
+            {DISCLAIMER.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
         </div>
       </PrintPage>
     </div>

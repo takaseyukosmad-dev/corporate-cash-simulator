@@ -165,6 +165,42 @@ describe('打ち合わせ相手の依頼（2026-10-27）: 結論の文・表の�
   })
 })
 
+describe('1年目の計算の流れ（決定C23）', () => {
+  const input = toFundInput(DEMO_FUND_FORM)!
+  const result = simulateFund(input)
+  const html = renderToStaticMarkup(<FundResultPanel input={input} result={result} showReference={false} onShowReferenceChange={() => {}} />)
+  const flow = html.match(/<table class="fund-flow">(.*?)<\/table>/)![1].replace(/<[^>]+>/g, '|')
+  it('対策前の利益から足し引きして、課税対象利益・法人税・現金の増加まで示す', () => {
+    expect(flow).toContain('対策前の利益||30,000,000円')
+    expect(flow).toContain('役員報酬の減額||6,000,000円')
+    expect(flow).toContain('DC掛金||1,488,000円')
+    expect(flow).toContain('保険料のうち経費にできる分||5,000,000円')
+    expect(flow).toContain('課税対象利益（概算）||29,512,000円')
+    expect(flow).toContain('法人税（概算）||8,853,600円')
+    expect(flow).toContain('法人の現金の増加||15,658,400円')
+  })
+  it('増える・減る理由を一言ずつ添える（DCは全額経費、報酬減額で社保負担が下がると課税対象利益は増える）', () => {
+    expect(flow).toContain('会社が出すDC掛金は全額経費になるので、課税対象利益を減らします。')
+    expect(flow).toContain('残りの 5,000,000円は経費にならず、法人税がかかります。')
+    expect(flow).toContain('減額前の報酬月額などを入れると計算します')
+    const withSi = toFundInput({ ...DEMO_FUND_FORM, payCutPayBefore: '1,000,000', payCutAge: '50', payCutPrefecture: '東京都' })!
+    const t = renderToStaticMarkup(<FundResultPanel input={withSi} result={simulateFund(withSi)} showReference={false} onShowReferenceChange={() => {}} />)
+    expect(t).toContain('報酬を減らすと負担が下がって経費が減るので、課税対象利益は増えます')
+  })
+  it('使っていない対策の行は出さない', () => {
+    const none = toFundInput({ ...EMPTY_FUND_FORM, annualProfitMan: '3000' })!
+    const t = renderToStaticMarkup(<FundResultPanel input={none} result={simulateFund(none)} showReference={false} onShowReferenceChange={() => {}} />)
+    const f = t.match(/<table class="fund-flow">(.*?)<\/table>/)![1]
+    expect(f).not.toMatch(/役員報酬の減額|DC掛金|保険料/)
+  })
+  it('印刷では4ページ目に入る', () => {
+    const p = renderToStaticMarkup(<FundPrint companyName="" input={input} result={result} showReference={false} date={new Date(2026, 9, 27)} />)
+    const pages = p.split('class="print-page"')
+    expect(pages[4]).toContain('1年目の計算の流れ')
+    expect(pages[3]).not.toContain('fund-flow')
+  })
+})
+
 describe('印刷用の表示（決定C14・C17・C18）', () => {
   const demo = toFundInput(DEMO_FUND_FORM)!
   const render = (companyName: string, input = demo) =>
