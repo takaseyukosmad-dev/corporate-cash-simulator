@@ -135,6 +135,36 @@ describe('通常と払済の差', () => {
   })
 })
 
+describe('打ち合わせ相手の依頼（2026-10-27）: 結論の文・表の並び・社会保険料の内訳', () => {
+  const input = toFundInput(DEMO_FUND_FORM)!
+  const result = simulateFund(input)
+  const html = renderToStaticMarkup(<FundResultPanel input={input} result={result} showReference={false} onShowReferenceChange={() => {}} />)
+  const text = html.replace(/<[^>]+>/g, '')
+  it('結論は法人現金＋法人保険返戻金＋個人DC資産の合計で、対策なしとの差を出す（決定C20）', () => {
+    expect(text).toContain('20年後、対策あり：法人現金＋法人保険返戻金＋個人DC資産で6億6,940万円となり、対策なしの場合の法人現金 4億2,000万円と比べて、2億4,940万円手残りが増えます。')
+    expect(text).toContain('（個人DC資産は 5,623万円です。いずれも概算で、保証された金額ではありません。）')
+  })
+  it('対策をしないと同じなら、増える・減るとは書かない', () => {
+    const none = toFundInput({ ...EMPTY_FUND_FORM, annualProfitMan: '3000' })!
+    const t = renderToStaticMarkup(<FundResultPanel input={none} result={simulateFund(none)} showReference={false} onShowReferenceChange={() => {}} />)
+    expect(t).toContain('対策あり：法人現金で')
+    expect(t).toContain('手残りはほぼ変わりません。')
+  })
+  it('比較表は「対策なしとの差」のまとまりが一番上（決定C22）', () => {
+    const titles = [...html.matchAll(/<th colspan="\d+">([^<]+)<\/th>/gi)].map((m) => m[1])
+    expect(titles[0]).toBe('対策なしとの差（対策あり − 対策なし）')
+  })
+  it('社会保険料の減少を、会社負担分・役員個人の負担分・合計に分けて出す。個人分は会社の現金に入れない（決定C21）', () => {
+    const withSi = toFundInput({ ...DEMO_FUND_FORM, payCutPayBefore: '1,500,000', payCutAge: '50', payCutPrefecture: '東京都' })!
+    const r = simulateFund(withSi)
+    expect(r.annualPersonalSocialInsuranceSaving).toBe(r.annualSocialInsuranceSaving)
+    expect(r.annualSocialInsuranceSaving).toBeGreaterThan(0)
+    const t = renderToStaticMarkup(<FundResultPanel input={withSi} result={r} showReference={false} onShowReferenceChange={() => {}} />)
+    expect(t).toContain('社会保険料の減少: 役員個人の負担分（参考。会社の現金には入らない）')
+    expect(r.scenarios[0].firstYear.cashFlow - result.scenarios[0].firstYear.cashFlow).toBeCloseTo(r.annualSocialInsuranceSaving * 0.7, 4)
+  })
+})
+
 describe('印刷用の表示（決定C14・C17・C18）', () => {
   const demo = toFundInput(DEMO_FUND_FORM)!
   const render = (companyName: string, input = demo) =>

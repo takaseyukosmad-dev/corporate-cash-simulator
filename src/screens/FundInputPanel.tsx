@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { PREFECTURES } from '../data/prefectures.ts'
-import type { FundField, FundFormValues } from './fundForm.ts'
+import { personalSocialInsuranceSaving, socialInsuranceSaving } from '../calc/fundFormation/simulateFund.ts'
+import { formatYen } from '../shared/format.ts'
+import { type FundField, type FundFormValues, toFundInput } from './fundForm.ts'
 
 // 左側（条件入力）。部品・見た目は「役員報酬・退職金 比較シミュレーター」の入力欄と同じクラスを使う
 
@@ -107,6 +109,30 @@ function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'o
   )
 }
 
+// 社会保険料の減少の内訳（決定C21）。会社負担分は会社の現金に入り、役員個人の負担分は参考として見せるだけ
+function SocialInsuranceBreakdown({ values }: { values: FundFormValues }) {
+  const input = toFundInput(values)
+  if (!input?.payCut.socialInsurance) return null
+  const company = socialInsuranceSaving(input)
+  const personal = personalSocialInsuranceSaving(input)
+  return (
+    <dl className="fund-si-breakdown" aria-label="社会保険料の減少の内訳（年額）">
+      <div>
+        <dt>会社負担分（会社の現金が増える）</dt>
+        <dd>{formatYen(company)}／年</dd>
+      </div>
+      <div>
+        <dt>役員個人の負担分（参考。会社の現金には入らない）</dt>
+        <dd>{formatYen(personal)}／年</dd>
+      </div>
+      <div>
+        <dt>合計</dt>
+        <dd>{formatYen(company + personal)}／年</dd>
+      </div>
+    </dl>
+  )
+}
+
 export function FundInputPanel(props: Props) {
   const { values, onChange, onBlur } = props
   return (
@@ -189,7 +215,7 @@ export function FundInputPanel(props: Props) {
               id="payCutPayBefore"
               label="減額前の報酬月額（空欄なら計算しない）"
               unit="円"
-              help="令和8年度の料率で、会社負担（個人負担と同額）の減少を計算します。"
+              help="令和8年度の料率で、会社負担分と役員個人の負担分（同額）の減少を計算します。内訳は下と、比較表の「初年度」に出ます。会社の現金に入るのは会社負担分だけです。"
               props={props}
             />
             {values.payCutPayBefore.trim() !== '' && (
@@ -213,6 +239,7 @@ export function FundInputPanel(props: Props) {
                   </select>
                   <Messages id="payCutPrefecture" props={props} />
                 </div>
+                <SocialInsuranceBreakdown values={values} />
               </>
             )}
           </div>

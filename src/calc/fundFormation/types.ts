@@ -117,6 +117,8 @@ export type FundResult = {
   base: { rows: BaseYearRow[]; totals: FundTotals; firstYear: BaseYearRow }
   scenarios: ScenarioResult[]
   annualSocialInsuranceSaving: number // 役員報酬の減額による会社負担の社会保険料の減少（年額）
+  // 役員個人の負担分の社会保険料の減少（年額）。内訳として見せるだけで、法人の現金・資産には足さない（決定C21）
+  annualPersonalSocialInsuranceSaving: number
   socialInsuranceComputed: boolean
   warnings: FundWarning[]
 }

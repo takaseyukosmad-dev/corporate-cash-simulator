@@ -165,7 +165,7 @@ export function FundPrint({
 
       <PrintPage no={3}>
         <h2 className="print-heading">比較表</h2>
-        <CompareTable columns={columns} years={years} showReference={showReference} />
+        <CompareTable columns={columns} years={years} showReference={showReference} personalSi={result.annualPersonalSocialInsuranceSaving} />
       </PrintPage>
 
       <PrintPage no={4}>

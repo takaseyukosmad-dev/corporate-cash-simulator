@@ -37,6 +37,11 @@ export function socialInsuranceSaving(input: FundInput): number {
   return monthly * 12 * payCut.officers
 }
 
+// 役員個人の負担分の社会保険料の減少（年額）。会社負担と同額（決定D10）。法人の現金・資産には足さない（決定C21）
+export function personalSocialInsuranceSaving(input: FundInput): number {
+  return socialInsuranceSaving(input)
+}
+
 export function annualPayCut(input: FundInput): number {
   const { payCut } = input
   return payCut.enabled ? payCut.officers * payCut.monthlyCutPerOfficer * 12 : 0
@@ -240,6 +245,7 @@ export function simulateFund(input: FundInput): FundResult {
     base: { rows, totals: baseTotals, firstYear: rows[0] },
     scenarios,
     annualSocialInsuranceSaving: siSaving,
+    annualPersonalSocialInsuranceSaving: personalSocialInsuranceSaving(input),
     socialInsuranceComputed: input.payCut.enabled && input.payCut.socialInsurance !== null,
     warnings: warningsFor(input, rows, scenarios),
   }
