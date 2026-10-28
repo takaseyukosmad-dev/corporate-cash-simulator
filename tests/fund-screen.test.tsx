@@ -214,9 +214,9 @@ describe('印刷用の表示（決定C14・C17・C18）', () => {
     expect(text).toContain('4 / 4')
   })
   it('タイトルに法人名と作成日が入る。空欄なら「様」を付けない', () => {
-    expect(text).toContain('サンプル商事株式会社様　会社のキャッシュ増加のご提案')
+    expect(text).toContain('サンプル商事株式会社様　キャッシュ増加のご提案')
     expect(text).toContain('作成日：2026年10月26日')
-    expect(render('  ')).toContain('<h1>会社のキャッシュ増加のご提案</h1>')
+    expect(render('  ')).toContain('<h1>キャッシュ増加のご提案</h1>')
   })
   it('年次の明細は入れない', () => {
     expect(text).not.toContain('年次の明細')

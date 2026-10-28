@@ -7,7 +7,7 @@ import { FundPrint } from './FundPrint.tsx'
 import { FundResultPanel } from './FundResultPanel.tsx'
 import { DEMO_FUND_FORM, EMPTY_FUND_FORM, type FundField, type FundFormValues, toFundInput, validateFundForm } from './fundForm.ts'
 
-// 会社のキャッシュ増加シミュレーター。入力を変えるとすぐに計算し直す。入力内容は保存しない
+// キャッシュ増加シュミレーター。入力を変えるとすぐに計算し直す。入力内容は保存しない
 
 const AMOUNT_FIELDS: FundField[] = ['annualProfitMan', 'dcMonthly', 'welfarePremiumMan', 'officerPremiumMan', 'payCutMonthly', 'payCutTotalMan', 'payCutPayBefore']
 
@@ -66,7 +66,7 @@ export function FundScreen() {
       <main className="sim-main fund-main">
         <div className="sim-top">
           <div className="sim-title">
-            <h1>会社のキャッシュ増加シミュレーター</h1>
+            <h1>キャッシュ増加シュミレーター</h1>
             <p className="muted">年間の法人利益から、対策なしと「DC・保険・役員報酬減額」を組み合わせた場合の、法人の現金・法人保有保険・DC加入者資産を比べます。</p>
             <p className="muted">すべて概算です。入力内容は保存されません。</p>
             {isDemo && <p className="notice fund-demo-note">デモ用の仮データ（架空の会社・説明用の値）を表示しています。実在の保険商品の返戻率ではありません。</p>}

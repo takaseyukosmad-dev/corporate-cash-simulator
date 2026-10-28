@@ -23,7 +23,7 @@ const DISCLAIMER = [
 
 function printTitle(companyName: string): string {
   const name = companyName.trim()
-  return name ? `${name}様　会社のキャッシュ増加のご提案` : '会社のキャッシュ増加のご提案'
+  return name ? `${name}様　キャッシュ増加のご提案` : 'キャッシュ増加のご提案'
 }
 
 function PrintPage({ no, children }: { no: number; children: ReactNode }) {

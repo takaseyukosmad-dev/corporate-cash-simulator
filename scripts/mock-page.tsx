@@ -6,7 +6,7 @@ import { DEMO_FUND_FORM, toFundInput } from '../src/screens/fundForm.ts'
 
 // 確認用モック（mock/index.html）の本文。実際の画面の部品に、デモ用の仮データを入れて HTML にする
 
-const APP_NAME = '会社のキャッシュ増加シミュレーター'
+const APP_NAME = 'キャッシュ増加シュミレーター'
 const noop = () => {}
 
 // 打ち合わせ相手に確認していただきたい点（docs/decisions.md）
