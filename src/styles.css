@@ -407,6 +407,10 @@ h2 {
 .conclusion-sub { margin: 6px 0 0; font-size: 15px; font-weight: 700; color: var(--navy); }
 /* 差が出る金額だけ大きく太く（2026-10-18） */
 .conclusion-amount { font-size: 1.45em; font-weight: 900; color: #e0201b; margin: 0 2px; white-space: nowrap; } /* 赤で強調（決定D103） */
+/* 決定C24: 対策なしの現金は合計より少し小さい太字、差は同じ大きさの赤、個人DC資産はさらに少し小さい赤 */
+.conclusion-base, .conclusion-diff { font-size: 1.2em; font-weight: 900; margin: 0 2px; white-space: nowrap; }
+.conclusion-diff, .conclusion-dc { color: #e0201b; }
+.conclusion-dc { font-size: 1.25em; font-weight: 900; margin: 0 1px; white-space: nowrap; }
 
 .detail-toggle { margin-top: 14px; }
 
@@ -756,7 +760,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .fund-kpi { padding: 2mm 3mm; }
 .print-page .fund-kpi-value { font-size: 16px; }
 .print-page .fund-kpi-note { font-size: 9.5px; }
-.print-page svg.chart { min-width: 0; max-height: 50mm; }
+.print-page svg.chart { min-width: 0; max-height: 47mm; }
 .print-page .legend { margin-top: 1mm; font-size: 9.5px; gap: 1mm 4mm; }
 .print-page .muted { font-size: 9.5px; }
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }

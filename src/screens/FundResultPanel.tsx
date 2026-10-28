@@ -282,7 +282,12 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
   const corporate = main.totals.corporateAssets
   const total = corporate === null ? null : man(corporate) + man(main.totals.dcAsset)
   const diff = total === null ? null : total - man(result.base.totals.cash)
-  const base = `対策なしの場合の法人現金 ${formatManYen(result.base.totals.cash)}`
+  // 金額の大きさ: 合計（いちばん大きい赤）＞ 対策なしの現金（太字）＝ 差（赤）＞ 個人DC資産（赤）（決定C24）
+  const base = (
+    <>
+      対策なしの場合の法人現金 <strong className="conclusion-base">{formatManYen(result.base.totals.cash)}</strong>
+    </>
+  )
   return (
     <section className="conclusion" aria-label="結論">
       {total === null || diff === null ? (
@@ -296,13 +301,13 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
             '手残りはほぼ変わりません。'
           ) : (
             <>
-              <strong>{formatManYen(diff)}</strong>
+              <strong className="conclusion-diff">{formatManYen(diff)}</strong>
               {diff > 0 ? '手残りが増えます。' : '手残りが減ります。'}
             </>
           )}
         </p>
       )}
-      <p className="conclusion-sub">（個人DC資産は {formatManYen(main.totals.dcAsset)}です。いずれも概算で、保証された金額ではありません。）</p>
+      <p className="conclusion-sub">（個人DC資産は <strong className="conclusion-dc">{formatManYen(main.totals.dcAsset)}</strong>です。いずれも概算で、保証された金額ではありません。）</p>
     </section>
   )
 }
