@@ -70,9 +70,9 @@ function Conditions({ companyName, input }: { companyName: string; input: FundIn
       payCut.enabled ? `${payCut.officers}人・1人あたり月額 ${formatYen(payCut.monthlyCutPerOfficer)}` : 'しない',
     ],
   ]
-  if (payCut.enabled && payCut.socialInsurance) {
-    const si = payCut.socialInsurance
-    rows.push(['社会保険料の減少', `減額前の報酬月額 ${formatYen(si.payBefore)}・${si.age}歳・${si.prefecture}`])
+  if (payCut.enabled && payCut.officer) {
+    const o = payCut.officer
+    rows.push(['減額する役員の条件', `減額前の報酬月額 ${formatYen(o.payBefore)}・${o.age}歳・${o.prefecture}・扶養${o.dependents}人`])
   }
   return (
     <dl className="print-conditions">

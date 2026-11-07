@@ -1,0 +1,27 @@
+{
+  "baseYearLabel": "令和9年度分（令和8年の所得に対する住民税）",
+  "sources": [
+    { "name": "仙台市 令和9年度（令和8年分）から適用される個人市県民税の税制改正（基礎控除に改正なし・給与所得控除の見直し）", "url": "https://www.city.sendai.jp/shiminze-kikaku/kurashi/tetsuzuki/zekin/kojin/kaisei/r8.html", "retrievedAt": "2026-10-13" },
+    { "name": "中央区 基礎控除、所得控除の種類と控除額（人的控除）", "url": "https://www.city.chuo.lg.jp/a0009/kurashi/zeikin/juuminzei/shotokukoujo/zintekikozyo.html", "retrievedAt": "2026-10-13" },
+    { "name": "神戸市 住民税（市県民税）の調整控除", "url": "https://www.city.kobe.lg.jp/a83576/kurashi/tax/shikenminze/syotoku/cyouseikoujyo.html", "retrievedAt": "2026-10-13" },
+    { "name": "総務省 個人住民税（標準税率・均等割）", "url": "https://www.soumu.go.jp/main_sosiki/jichi_zeisei/czaisei/czaisei_seido/150790_06.html", "retrievedAt": "2026-10-13" },
+    { "name": "東京都主税局 個人住民税（均等割・森林環境税）", "url": "https://www.tax.metro.tokyo.lg.jp/kazei/life/kojin_ju", "retrievedAt": "2026-10-13" }
+  ],
+  "note": "金額は円、率は%。給与所得は所得税と同じ計算（令和9・10年度は給与所得控除の最低額74万円）。所得割は標準税率10%（道府県民税4%・市町村民税6%）。均等割は市町村民税3,000円＋道府県民税1,000円＋森林環境税1,000円。超過課税は考慮しない。",
+  "basicDeduction": [
+    { "upTo": 24000000, "amount": 430000 },
+    { "upTo": 24500000, "amount": 290000 },
+    { "upTo": 25000000, "amount": 150000 },
+    { "upTo": null, "amount": 0 }
+  ],
+  "dependentDeduction": 330000,
+  "incomeLevyRate": 10,
+  "perCapita": 5000,
+  "adjustment": {
+    "personalDeductionDiff": { "basic": 50000, "dependent": 50000 },
+    "threshold": 2000000,
+    "rate": 5,
+    "minimum": 2500,
+    "maxTotalIncome": 25000000
+  }
+}

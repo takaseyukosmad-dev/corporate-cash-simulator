@@ -600,6 +600,7 @@ ul.plain li:last-child { margin-bottom: 0; }
   --fund-cash: #1e4f9c; /* 法人の現金 */
   --fund-ins: #f4a259; /* 法人保有保険 */
   --fund-dc: #0fa3b1; /* DC加入者資産（個人） */
+  --fund-net: #8c7fd9; /* 個人の報酬の手残り（決定C27） */
 }
 .fund-toggle {
   display: flex !important;
@@ -626,19 +627,24 @@ ul.plain li:last-child { margin-bottom: 0; }
 .fund-kpi-missing { margin: 2px 0 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); }
 .fund-kpi-diff { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: var(--c3-text); }
 .fund-si-breakdown { margin: 4px 0 12px; padding: 8px 10px; display: grid; gap: 4px; font-size: 12px; background: var(--yellow-tint); border-radius: 6px; }
+.fund-si-breakdown dl { margin: 0; display: grid; gap: 4px; }
 .fund-si-breakdown div { display: flex; justify-content: space-between; gap: 8px; }
 .fund-si-breakdown dt { margin: 0; color: var(--muted); }
 .fund-si-breakdown dd { margin: 0; font-weight: 700; white-space: nowrap; }
+.fund-si-breakdown .strong dt, .fund-si-breakdown .strong dd { color: var(--navy-dark); font-weight: 800; }
+.fund-si-breakdown-title { margin: 6px 0 0; font-weight: 700; color: var(--navy); }
 .fund-kpi-sub { margin: 10px 0 0; display: grid; gap: 4px; font-size: 12px; }
 .fund-kpi-sub div { display: flex; justify-content: space-between; gap: 8px; }
 .fund-kpi-sub dt { margin: 0; color: var(--muted); }
 .fund-kpi-sub dd { margin: 0; font-weight: 700; white-space: nowrap; }
 .fund-kpi-sub .dc dt, .fund-kpi-sub .dc dd { color: #0b7c87; }
+.fund-kpi-sub .net dt, .fund-kpi-sub .net dd { color: var(--c1-text); }
 .fund-kpi-note { grid-column: 1 / -1; margin: 0; }
 
 .fund-chart .fund-cash { fill: var(--fund-cash); }
 .fund-chart .fund-ins { fill: var(--fund-ins); }
 .fund-chart .fund-dc { fill: var(--fund-dc); }
+.fund-chart .fund-net { fill: var(--fund-net); }
 .fund-chart .fund-zero { stroke: var(--muted); stroke-width: 1; }
 .fund-chart .fund-sub-label { font-size: 11px; fill: var(--muted); }
 .fund-chart .fl-0 { stroke: #9aa5b1; stroke-dasharray: 6 5; }
@@ -654,6 +660,7 @@ ul.plain li:last-child { margin-bottom: 0; }
 .fund-swatch.cash { background: var(--fund-cash); }
 .fund-swatch.ins { background: var(--fund-ins); }
 .fund-swatch.dc { background: var(--fund-dc); }
+.fund-swatch.net { background: var(--fund-net); }
 
 .fund-table-wrap { overflow-x: auto; margin-bottom: 12px; }
 table.fund-flow { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -740,7 +747,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-title p { margin: 0; flex-shrink: 0; color: #dce8fb; font-size: 10px; }
 .print-heading { margin: 0 0 3mm; padding-bottom: 1mm; font-size: 15px; color: var(--navy); border-bottom: 1.5px solid var(--navy); }
 .print-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-.print-flow-cols { columns: 2; column-gap: 6mm; }
+.print-flow-cols { columns: 2; column-gap: 6mm; font-size: 10px; line-height: 1.45; }
 .print-flow-cols h3 { break-after: avoid; }
 .print-flow-cols table, .print-flow-cols li, .print-flow-cols .warning, .print-flow-cols dl > div { break-inside: avoid; }
 .print-flow-cols > :first-child { margin-top: 0; }
@@ -766,13 +773,13 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .fund-kpi { padding: 2mm 3mm; }
 .print-page .fund-kpi-value { font-size: 16px; }
 .print-page .fund-kpi-note { font-size: 9.5px; }
-.print-page svg.chart { min-width: 0; max-height: 47mm; }
+.print-page svg.chart { min-width: 0; max-height: 44mm; }
 .print-page .legend { margin-top: 1mm; font-size: 9.5px; gap: 1mm 4mm; }
 .print-page .muted { font-size: 9.5px; }
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }
 .print-page table.fund-table { font-size: 9.5px; }
 .print-page table.fund-table th,
-.print-page table.fund-table td { padding: 0.4mm 2mm; line-height: 1.35; }
+.print-page table.fund-table td { padding: 0.3mm 2mm; line-height: 1.3; }
 .print-page table.fund-table thead th { font-size: 9.5px; }
 .print-page .warning { padding: 1.5mm 3mm; font-size: 9.5px; }
 .print-page table.fund-flow { font-size: 9px; }

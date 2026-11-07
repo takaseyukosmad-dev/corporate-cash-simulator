@@ -1,3 +1,4 @@
+import { monthlyDeductions } from '../tax/monthlyDeductions.ts'
 import { monthlySocialInsurance } from '../tax/socialInsurance.ts'
 import { dcAssetByYear } from './dc.ts'
 import type {
@@ -9,6 +10,7 @@ import type {
   FundYearRow,
   InsuranceOutcome,
   InsurancePlan,
+  PayCutPersonal,
   ScenarioKey,
   ScenarioResult,
 } from './types.ts'
@@ -30,8 +32,8 @@ const taxOf = (taxable: number, ratePercent: number) => Math.max(0, taxable) * p
 // 役員報酬の減額による会社負担の社会保険料の減少（年額）。会社負担は個人負担と同額とする（「役員報酬・退職金 比較シミュレーター」の決定D10）
 export function socialInsuranceSaving(input: FundInput): number {
   const { payCut } = input
-  if (!payCut.enabled || !payCut.socialInsurance || payCut.officers <= 0) return 0
-  const { payBefore, age, prefecture } = payCut.socialInsurance
+  if (!payCut.enabled || !payCut.officer || payCut.officers <= 0) return 0
+  const { payBefore, age, prefecture } = payCut.officer
   const after = Math.max(0, payBefore - payCut.monthlyCutPerOfficer)
   const monthly = monthlySocialInsurance(payBefore, age, prefecture).total - monthlySocialInsurance(after, age, prefecture).total
   return monthly * 12 * payCut.officers
@@ -40,6 +42,23 @@ export function socialInsuranceSaving(input: FundInput): number {
 // 役員個人の負担分の社会保険料の減少（年額）。会社負担と同額（決定D10）。法人の現金・資産には足さない（決定C21）
 export function personalSocialInsuranceSaving(input: FundInput): number {
   return socialInsuranceSaving(input)
+}
+
+// 役員報酬の減額で、役員個人の手元から減るもの（年額・全員分）。「役員報酬・退職金 比較シミュレーター」と同じ
+// 手取り = 報酬 − 社会保険料（個人負担） − 所得税 − 住民税 を、減額前と減額後で比べる（決定C27）
+export function payCutPersonal(input: FundInput): PayCutPersonal | null {
+  const { payCut } = input
+  if (!payCut.enabled || !payCut.officer || payCut.officers <= 0) return null
+  const { payBefore, age, prefecture, dependents } = payCut.officer
+  const after = Math.max(0, payBefore - payCut.monthlyCutPerOfficer)
+  const b = monthlyDeductions(payBefore, age, prefecture, dependents)
+  const a = monthlyDeductions(after, age, prefecture, dependents)
+  const yearly = (v: number) => v * 12 * payCut.officers
+  const pay = yearly(payBefore - after)
+  const socialInsurance = yearly(b.socialInsurance - a.socialInsurance)
+  const incomeTax = yearly(b.incomeTax - a.incomeTax)
+  const residentTax = yearly(b.residentTax - a.residentTax)
+  return { pay, socialInsurance, incomeTax, residentTax, net: pay - socialInsurance - incomeTax - residentTax }
 }
 
 export function annualPayCut(input: FundInput): number {
@@ -141,7 +160,7 @@ function scenarioRows(input: FundInput, premiumYears: { welfare: number; officer
   return rows
 }
 
-function totals(cash: number, corporateTax: number, insurance: number | null, dcAsset: number, dcContribution: number): FundTotals {
+function totals(cash: number, corporateTax: number, insurance: number | null, dcAsset: number, dcContribution: number, personalNet = 0): FundTotals {
   const corporateAssets = insurance === null ? null : cash + insurance
   return {
     corporateTax,
@@ -150,7 +169,8 @@ function totals(cash: number, corporateTax: number, insurance: number | null, dc
     corporateAssets,
     dcAsset,
     dcContribution,
-    referenceTotal: corporateAssets === null ? null : corporateAssets + dcAsset,
+    personalNet,
+    referenceTotal: corporateAssets === null ? null : corporateAssets + dcAsset + personalNet,
   }
 }
 
@@ -164,6 +184,7 @@ function diffTotals(after: FundTotals, before: FundTotals): FundTotals {
     corporateAssets: sub(after.corporateAssets, before.corporateAssets),
     dcAsset: after.dcAsset - before.dcAsset,
     dcContribution: after.dcContribution - before.dcContribution,
+    personalNet: after.personalNet - before.personalNet,
     referenceTotal: sub(after.referenceTotal, before.referenceTotal),
   }
 }
@@ -238,15 +259,17 @@ export function simulateFund(input: FundInput): FundResult {
   const siSaving = socialInsuranceSaving(input)
   const rows = baseRows(input)
   const last = rows[rows.length - 1]
-  // 対策なし: 保険・DCはない（保険評価額は0円）
-  const baseTotals = totals(last.cashCumulative, last.taxCumulative, 0, 0, 0)
+  // 対策なし: 保険・DCはない（保険評価額は0円）。減額しない分の報酬の手取りが個人に残る（決定C27）
+  const personal = payCutPersonal(input)
+  const baseTotals = totals(last.cashCumulative, last.taxCumulative, 0, 0, 0, (personal?.net ?? 0) * input.years)
   const scenarios = scenarioKeys(input).map((key) => scenario(key, input, siSaving, baseTotals))
   return {
     base: { rows, totals: baseTotals, firstYear: rows[0] },
     scenarios,
     annualSocialInsuranceSaving: siSaving,
     annualPersonalSocialInsuranceSaving: personalSocialInsuranceSaving(input),
-    socialInsuranceComputed: input.payCut.enabled && input.payCut.socialInsurance !== null,
+    socialInsuranceComputed: input.payCut.enabled && input.payCut.officer !== null,
+    payCutPersonal: personal,
     warnings: warningsFor(input, rows, scenarios),
   }
 }

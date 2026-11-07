@@ -41,6 +41,12 @@ export function Kpis({ columns, years }: { columns: Column[]; years: number }) {
                 <dd>{formatManYen(c.totals.dcAsset)}</dd>
               </div>
             )}
+            {c.totals.personalNet > 0 && (
+              <div className="net">
+                <dt>個人の報酬の手残り</dt>
+                <dd>{formatManYen(c.totals.personalNet)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       ))}
@@ -66,6 +72,8 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
     const b = f(maturity)
     return a === null || b === null ? NOT_ENTERED : formatSignedYen(a - b)
   }
+  // 個人の報酬の手残り（決定C27）。役員報酬を減額するときだけ行を出す
+  const net = columns[0].totals.personalNet > 0
   const groups: { title: string; rows: Row[] }[] = [
     // 打ち合わせ相手の依頼（2026-10-27）: 対策なしとの差を表の一番上に（決定C22）
     {
@@ -75,6 +83,7 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
         { label: '法人に残る現金', pick: (c) => (c.diff ? signed(c.diff.cash) : '—') },
         { label: '法人保有の現金＋保険評価額', pick: (c) => (c.diff ? signed(c.diff.corporateAssets) : '—') },
         { label: 'DC加入者資産（個人）', pick: (c) => (c.diff ? signed(c.diff.dcAsset) : '—') },
+        ...(net ? [{ label: '個人の報酬の手残り', pick: (c: Column) => (c.diff ? signed(c.diff.personalNet) : '—') }] : []),
         ...(showReference ? [{ label: '参考総額', pick: (c: Column) => (c.diff ? signed(c.diff.referenceTotal) : '—') }] : []),
       ],
     },
@@ -87,7 +96,8 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
         { label: '法人保有の現金＋保険評価額', pick: (c) => yen(c.totals.corporateAssets) },
         { label: 'DC加入者資産（個人の資産）', pick: (c) => yen(c.totals.dcAsset) },
         { label: 'DC掛金の累計', pick: (c) => yen(c.totals.dcContribution) },
-        ...(showReference ? [{ label: '参考総額（法人保有＋DC加入者資産。帰属が異なる合計）', pick: (c: Column) => yen(c.totals.referenceTotal) }] : []),
+        ...(net ? [{ label: '個人の報酬の手残り（税・社会保険料を引いた後の累計）', pick: (c: Column) => yen(c.totals.personalNet) }] : []),
+        ...(showReference ? [{ label: '参考総額（法人保有＋DC加入者資産＋個人の報酬の手残り。帰属が異なる合計）', pick: (c: Column) => yen(c.totals.referenceTotal) }] : []),
       ],
     },
     // 打ち合わせ（2026-10-23）: 通常と払済の差が分かればよい
@@ -240,6 +250,13 @@ export function BasisList({ input, result }: { input: FundInput; result: FundRes
           役員報酬の減額 R = {input.payCut.officers}人 × {formatYen(input.payCut.monthlyCutPerOfficer)} × 12か月 = {formatYen(annualPayCut(input))}／年
           {result.socialInsuranceComputed ? `、会社負担の社会保険料の減少 S = ${formatYen(result.annualSocialInsuranceSaving)}／年（令和8年度の料率。役員個人の負担分も同じ ${formatYen(result.annualPersonalSocialInsuranceSaving)}／年減りますが、会社の現金には入れません）` : '、会社負担の社会保険料の減少 S は計算していません（0円）'}
         </li>
+        {result.payCutPersonal && (
+          <li>
+            個人の報酬の手残り（対策なし） = 減額しない分の報酬 {formatYen(result.payCutPersonal.pay)} − 社会保険料（個人負担） {formatYen(result.payCutPersonal.socialInsurance)} − 所得税{' '}
+            {formatYen(result.payCutPersonal.incomeTax)} − 住民税 {formatYen(result.payCutPersonal.residentTax)} = {formatYen(result.payCutPersonal.net)}／年 × {input.years}年。
+            「役員報酬・退職金 比較シミュレーター」と同じ計算（令和8年度。住民税は同じ年の所得で計算）。対策ありでは0円です。
+          </li>
+        )}
         <li>
           DC掛金 = {dc.members}人 × {formatYen(dc.monthlyPerMember)} × 12か月 = {formatYen(annualDcContribution(input))}／年（{dc.contributionYears}年間）。
           会社が福利厚生費として拠出するため、全額を会社の費用 D とします。
@@ -253,7 +270,7 @@ export function BasisList({ input, result }: { input: FundInput; result: FundRes
         <li>法人税（概算） = max(0, 課税対象利益) × 法人実効税率{formatRate(t)}（マイナスにしない）</li>
         <li>法人の現金の増加 = P ＋ R ＋ S − D − 保険料（全額） − 法人税。損金にならない保険料も現金からは出ていきます。</li>
         <li>解約返戻金（比較期間末） = 払った保険料の合計 × 入力された返戻率。払済ケースは払込年数で保険料を止めます。</li>
-        <li>参考総額 = 法人保有の現金＋保険評価額 ＋ DC加入者資産（帰属が異なるものを足した参考値）</li>
+        <li>参考総額 = 法人保有の現金＋保険評価額 ＋ DC加入者資産 ＋ 個人の報酬の手残り（帰属が異なるものを足した参考値）</li>
       </ul>
   )
 }
@@ -281,11 +298,14 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
   const man = (v: number) => Math.round(v / 10_000) * 10_000
   const corporate = main.totals.corporateAssets
   const total = corporate === null ? null : man(corporate) + man(main.totals.dcAsset)
-  const diff = total === null ? null : total - man(result.base.totals.cash)
-  // 金額の大きさ: 合計（いちばん大きい赤）＞ 対策なしの現金（太字）＝ 差（赤）＞ 個人DC資産（赤）（決定C24）
+  // 対策なしは、法人現金に、減額しない分の報酬の手残り（個人）を足して比べる（決定C27）
+  const basePersonal = result.base.totals.personalNet
+  const baseTotal = man(result.base.totals.cash) + man(basePersonal)
+  const diff = total === null ? null : total - baseTotal
+  // 金額の大きさ: 合計（いちばん大きい赤）＞ 対策なしの合計（太字）＝ 差（赤）＞ 個人DC資産（赤）（決定C24）
   const base = (
     <>
-      対策なしの場合の法人現金 <strong className="conclusion-base">{formatManYen(result.base.totals.cash)}</strong>
+      対策なしの場合の法人現金{basePersonal > 0 ? '＋個人の報酬の手残り' : ''} <strong className="conclusion-base">{formatManYen(baseTotal)}</strong>
     </>
   )
   return (
@@ -307,7 +327,15 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
           )}
         </p>
       )}
-      <p className="conclusion-sub">（個人DC資産は <strong className="conclusion-dc">{formatManYen(main.totals.dcAsset)}</strong>です。いずれも概算で、保証された金額ではありません。）</p>
+      <p className="conclusion-sub">
+        （個人DC資産は <strong className="conclusion-dc">{formatManYen(main.totals.dcAsset)}</strong>
+        {basePersonal > 0 && (
+          <>
+            、対策なしの個人の報酬の手残りは <strong className="conclusion-dc">{formatManYen(basePersonal)}</strong>
+          </>
+        )}
+        です。いずれも概算で、保証された金額ではありません。）
+      </p>
     </section>
   )
 }
@@ -400,6 +428,7 @@ export function AssetChart({ columns, years }: { columns: Column[]; years: numbe
             insurance: c.totals.insurance,
             hasInsurance: !!c.scenario && (!!c.scenario.welfare || !!c.scenario.officer),
             dcAsset: c.totals.dcAsset,
+            personalNet: c.totals.personalNet,
           }))}
         />
       </div>
@@ -407,6 +436,9 @@ export function AssetChart({ columns, years }: { columns: Column[]; years: numbe
         <li><span className="fund-swatch cash" />法人の現金</li>
         <li><span className="fund-swatch ins" />法人保有保険の解約返戻金（入力した返戻率）</li>
         <li><span className="fund-swatch dc" />DC加入者資産（個人の資産。法人のものではない）</li>
+        {columns.some((c) => c.totals.personalNet > 0) && (
+          <li><span className="fund-swatch net" />個人の報酬の手残り（対策なしで、減額しない分の報酬から税・社会保険料を引いた額）</li>
+        )}
       </ul>
     </>
   )
@@ -450,7 +482,7 @@ export function AssumptionList() {
       <li>保険の返戻率・DCの運用利回りは入力された仮定で、<strong>保証された値ではありません</strong>。返戻率は保険設計書の値を入力してください。</li>
       <li>保険はすべて法人契約（解約返戻金は法人のもの）として計算しています。DC加入者資産は加入者個人のもので、法人の現金・資産には含めていません。</li>
       <li>法人の現金は「この期間に増える分」です。期首の現金残高、預金の利息は含めていません。</li>
-      <li>退職金の支給とその税金、保険の解約益にかかる法人税、DCの受け取り時の税金、役員個人の所得税・住民税の変化は<strong>計算していません</strong>（将来の課題）。</li>
+      <li>退職金の支給とその税金、保険の解約益にかかる法人税、DCの受け取り時の税金は<strong>計算していません</strong>（将来の課題）。役員報酬の減額による役員個人の社会保険料・所得税・住民税の変化は、減額した分の手取り（個人の報酬の手残り）として計算しています。</li>
       <li>DCの掛金の上限・適用時期・他制度の掛金との調整は、制度の最新情報で確認してください。</li>
     </ul>
   )
@@ -479,7 +511,7 @@ export function FundResultPanel({
 
       <section className="card chart-card">
         <h2>
-          {years}年後の資産の比較<span className="period">万円。法人（現金＋法人保有保険）と個人（DC加入者資産）を分けて表示</span>
+          {years}年後の資産の比較<span className="period">万円。法人（現金＋法人保有保険）と個人（DC加入者資産・報酬の手残り）を分けて表示</span>
         </h2>
         <AssetChart columns={columns} years={years} />
       </section>

@@ -30,8 +30,19 @@ export type PayCut = {
   enabled: boolean
   officers: number // 減額する役員の人数
   monthlyCutPerOfficer: number // 1人あたり月額減額（円）
-  // 会社負担の社会保険料の減少を計算するときだけ入れる（「役員報酬・退職金 比較シミュレーター」の社会保険料の計算を使う）。null なら計算しない
-  socialInsurance: { payBefore: number; age: number; prefecture: Prefecture } | null
+  // 減額する役員1人の条件（全員同じとする）。会社負担の社会保険料の減少と、個人の報酬の手残りの計算に使う（決定C27）。
+  // 画面では減額するとき必須。null なら社会保険料・手残りを計算しない
+  officer: { payBefore: number; age: number; prefecture: Prefecture; dependents: number } | null
+}
+
+// 役員報酬の減額で、役員個人の手元から減るもの（年額・減額する役員全員分）（決定C27）
+// 対策なしでは減額しない分も役員に払うため、その税・社会保険料を引いた手取り（net）が個人に残る
+export type PayCutPersonal = {
+  pay: number // 減額した報酬
+  socialInsurance: number // 個人負担の社会保険料の減少
+  incomeTax: number // 所得税の減少
+  residentTax: number // 住民税の減少
+  net: number // 手取りの減少（= 個人の報酬の手残り。対策なしの側に残る）
 }
 
 export type FundInput = {
@@ -96,7 +107,9 @@ export type FundTotals = {
   corporateAssets: number | null // 法人保有の現金＋保険評価額
   dcAsset: number // DC加入者の資産（個人の資産。法人の資産ではない）
   dcContribution: number // DC掛金の累計
-  referenceTotal: number | null // 参考総額（法人資産＋DC加入者資産。帰属が違うものの合計）
+  // 個人の報酬の手残り（累計）。対策なしで、減額しない分の報酬から税・社会保険料を引いた額。対策ありは0円（決定C27）
+  personalNet: number
+  referenceTotal: number | null // 参考総額（法人資産＋DC加入者資産＋個人の報酬の手残り。帰属が違うものの合計）
 }
 
 export type ScenarioResult = {
@@ -120,5 +133,6 @@ export type FundResult = {
   // 役員個人の負担分の社会保険料の減少（年額）。内訳として見せるだけで、法人の現金・資産には足さない（決定C21）
   annualPersonalSocialInsuranceSaving: number
   socialInsuranceComputed: boolean
+  payCutPersonal: PayCutPersonal | null // 役員個人の手元から減るもの（年額）。計算しないときは null
   warnings: FundWarning[]
 }

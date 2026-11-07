@@ -1,0 +1,139 @@
+{
+  "baseYearLabel": "令和8年分（2026年分）",
+  "sources": [
+    {
+      "name": "国税庁 令和8年分 年末調整のしかた「昨年と比べて変わった点」",
+      "url": "https://www.nta.go.jp/publication/pamph/gensen/nencho2026/pdf/102.pdf",
+      "retrievedAt": "2026-10-13"
+    },
+    {
+      "name": "国税庁 令和8年分 基礎控除額の表・扶養控除額等の表",
+      "url": "https://www.nta.go.jp/publication/pamph/gensen/nencho2026/pdf/115.pdf",
+      "retrievedAt": "2026-10-13"
+    },
+    {
+      "name": "国税庁 タックスアンサー No.1410 給与所得控除",
+      "url": "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm",
+      "retrievedAt": "2026-10-13"
+    },
+    {
+      "name": "国税庁 タックスアンサー No.2260 所得税の税率",
+      "url": "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm",
+      "retrievedAt": "2026-10-13"
+    }
+  ],
+  "note": "金額は円、率は%。給与所得: 収入219.1万円未満は 収入−74万円（0円未満は0円）、219.1万〜220万円は特例の金額、220万〜660万円未満は4,000円単位に切り捨てた収入に下の式、660万円以上は収入に下の式を使う（所得税法 別表第五・租税特別措置法 第29条の4）。 令和9年分以後の所得は、復興特別所得税1.1%＋防衛特別所得税1%（合計2.1%）に変わる予定（タックスアンサー No.2260）。年度更新のときに確認すること。",
+  "employmentIncome": {
+    "minimumDeduction": 740000,
+    "transitional": [
+      {
+        "from": 2191000,
+        "to": 2193000,
+        "income": 1451000
+      },
+      {
+        "from": 2193000,
+        "to": 2196000,
+        "income": 1453000
+      },
+      {
+        "from": 2196000,
+        "to": 2200000,
+        "income": 1456000
+      }
+    ],
+    "tableUnit": 4000,
+    "tableUpTo": 6600000,
+    "deductionBrackets": [
+      {
+        "upTo": 3600000,
+        "rate": 30,
+        "add": 80000
+      },
+      {
+        "upTo": 6600000,
+        "rate": 20,
+        "add": 440000
+      },
+      {
+        "upTo": 8500000,
+        "rate": 10,
+        "add": 1100000
+      },
+      {
+        "upTo": null,
+        "rate": 0,
+        "add": 1950000
+      }
+    ]
+  },
+  "basicDeduction": [
+    {
+      "upTo": 4890000,
+      "amount": 1040000
+    },
+    {
+      "upTo": 6550000,
+      "amount": 670000
+    },
+    {
+      "upTo": 23500000,
+      "amount": 620000
+    },
+    {
+      "upTo": 24000000,
+      "amount": 480000
+    },
+    {
+      "upTo": 24500000,
+      "amount": 320000
+    },
+    {
+      "upTo": 25000000,
+      "amount": 160000
+    },
+    {
+      "upTo": null,
+      "amount": 0
+    }
+  ],
+  "dependentDeduction": 380000,
+  "rateTable": [
+    {
+      "from": 0,
+      "rate": 5,
+      "deduction": 0
+    },
+    {
+      "from": 1950000,
+      "rate": 10,
+      "deduction": 97500
+    },
+    {
+      "from": 3300000,
+      "rate": 20,
+      "deduction": 427500
+    },
+    {
+      "from": 6950000,
+      "rate": 23,
+      "deduction": 636000
+    },
+    {
+      "from": 9000000,
+      "rate": 33,
+      "deduction": 1536000
+    },
+    {
+      "from": 18000000,
+      "rate": 40,
+      "deduction": 2796000
+    },
+    {
+      "from": 40000000,
+      "rate": 45,
+      "deduction": 4796000
+    }
+  ],
+  "reconstructionSurtaxRate": 2.1
+}

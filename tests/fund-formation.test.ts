@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { dcAssetByYear } from '../src/calc/fundFormation/dc.ts'
-import { simulateFund, socialInsuranceSaving } from '../src/calc/fundFormation/simulateFund.ts'
+import { payCutPersonal, simulateFund, socialInsuranceSaving } from '../src/calc/fundFormation/simulateFund.ts'
 import type { FundInput, InsurancePlan } from '../src/calc/fundFormation/types.ts'
+import { monthlyDeductions } from '../src/calc/tax/monthlyDeductions.ts'
 import { monthlySocialInsurance } from '../src/calc/tax/socialInsurance.ts'
 
 // 受け入れテスト（要件定義 6章）
@@ -15,7 +16,7 @@ const zero: FundInput = {
   dc: { members: 0, monthlyPerMember: 0, annualReturnRate: 0, contributionYears: 20, funding: 'employer' },
   welfare: noInsurance,
   officer: noInsurance,
-  payCut: { enabled: false, officers: 0, monthlyCutPerOfficer: 0, socialInsurance: null },
+  payCut: { enabled: false, officers: 0, monthlyCutPerOfficer: 0, officer: null },
   paidUpYears: 5,
 }
 
@@ -37,7 +38,7 @@ describe('1. 追加施策がすべて0なら、対策なしと対策ありが一
         expect(row.cashCumulative).toBe(r.base.rows[i].cashCumulative)
       })
       expect(s.totals).toEqual(r.base.totals)
-      expect(s.diff).toEqual({ corporateTax: 0, cash: 0, insurance: 0, corporateAssets: 0, dcAsset: 0, dcContribution: 0, referenceTotal: 0 })
+      expect(s.diff).toEqual({ corporateTax: 0, cash: 0, insurance: 0, corporateAssets: 0, dcAsset: 0, dcContribution: 0, personalNet: 0, referenceTotal: 0 })
     }
   })
   it('対策なし: 利益3,000万円・30%で毎年900万円の法人税、20年で現金4億2,000万円', () => {
@@ -48,7 +49,7 @@ describe('1. 追加施策がすべて0なら、対策なしと対策ありが一
 })
 
 describe('2. 役員報酬の減額だけ', () => {
-  const input: FundInput = { ...zero, payCut: { enabled: true, officers: 2, monthlyCutPerOfficer: 500_000, socialInsurance: null } }
+  const input: FundInput = { ...zero, payCut: { enabled: true, officers: 2, monthlyCutPerOfficer: 500_000, officer: null } }
   const r = simulateFund(input)
   const s = r.scenarios[0]
   it('減額分（2人×50万円×12か月＝1,200万円）が利益・税・現金に反映される', () => {
@@ -64,7 +65,7 @@ describe('2. 役員報酬の減額だけ', () => {
   })
   it('減額前の報酬月額などを入れたときだけ、「役員報酬・退職金 比較シミュレーター」と同じ計算で会社負担の社会保険料の減少を加える', () => {
     expect(socialInsuranceSaving(input)).toBe(0)
-    const withSi: FundInput = { ...input, payCut: { ...input.payCut, socialInsurance: { payBefore: 1_500_000, age: 50, prefecture: '東京都' } } }
+    const withSi: FundInput = { ...input, payCut: { ...input.payCut, officer: { payBefore: 1_500_000, age: 50, prefecture: '東京都', dependents: 0 } } }
     const expected = (monthlySocialInsurance(1_500_000, 50, '東京都').total - monthlySocialInsurance(1_000_000, 50, '東京都').total) * 12 * 2
     expect(socialInsuranceSaving(withSi)).toBe(expected)
     expect(expected).toBeGreaterThan(0)
@@ -161,7 +162,7 @@ describe('7. 二重計上がない', () => {
     dc: { members: 3, monthlyPerMember: 30_000, annualReturnRate: 4, contributionYears: 20, funding: 'employer' },
     welfare: welfare(),
     officer: { enabled: true, annualPremium: 3_000_000, deductibleRate: 40, maturityRate: 90, paidUpRate: 120 },
-    payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 300_000, socialInsurance: { payBefore: 1_000_000, age: 55, prefecture: '大阪府' } },
+    payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 300_000, officer: { payBefore: 1_000_000, age: 55, prefecture: '大阪府', dependents: 0 } },
   }
   const r = simulateFund(input)
   it('毎年: 利益＋減額＋社保減 ＝ DC会社負担＋保険料＋法人税＋現金の増加', () => {
@@ -217,9 +218,42 @@ describe('打ち合わせの例（2026-10-23）: 報酬減額＋保険の法人�
   it('報酬減額600万円・保険料600万円（1/2損金）なら、法人税は対策なしより90万円増える', () => {
     const s = simulateFund({
       ...zero,
-      payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 500_000, socialInsurance: null },
+      payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 500_000, officer: null },
       officer: { enabled: true, annualPremium: 6_000_000, deductibleRate: 50, maturityRate: null, paidUpRate: null },
     }).scenarios[0]
     expect(s.firstYear.corporateTax - 9_000_000).toBeCloseTo(900_000, 6)
+  })
+})
+
+describe('個人の報酬の手残り（決定C27）', () => {
+  const input: FundInput = {
+    ...zero,
+    payCut: { enabled: true, officers: 2, monthlyCutPerOfficer: 500_000, officer: { payBefore: 1_000_000, age: 52, prefecture: '東京都', dependents: 1 } },
+  }
+  const r = simulateFund(input)
+  it('元のアプリと同じ計算で、減額前と減額後の手取りの差を出す（年額・人数分）', () => {
+    const b = monthlyDeductions(1_000_000, 52, '東京都', 1)
+    const a = monthlyDeductions(500_000, 52, '東京都', 1)
+    const net = (500_000 - (b.socialInsurance - a.socialInsurance) - (b.incomeTax - a.incomeTax) - (b.residentTax - a.residentTax)) * 12 * 2
+    const p = payCutPersonal(input)!
+    expect(p.pay).toBe(12_000_000)
+    expect(p.net).toBe(net)
+    expect(p.socialInsurance).toBe(socialInsuranceSaving(input)) // 個人負担の減少 = 会社負担の減少（同額）
+    expect(p.net).toBeLessThan(p.pay)
+  })
+  it('対策なしに手残りの累計が入り、対策ありは0円。参考総額にも入る', () => {
+    const net = payCutPersonal(input)!.net
+    expect(r.base.totals.personalNet).toBe(net * 20)
+    expect(r.base.totals.referenceTotal).toBe(r.base.totals.cash + net * 20)
+    expect(r.scenarios[0].totals.personalNet).toBe(0)
+    expect(r.scenarios[0].diff.personalNet).toBe(-net * 20)
+  })
+  it('法人の現金の計算は変わらない（手残りは個人のお金）', () => {
+    const withoutOfficer = simulateFund({ ...input, payCut: { ...input.payCut, officer: null } })
+    expect(r.base.totals.cash).toBe(withoutOfficer.base.totals.cash)
+  })
+  it('減額しないときは計算しない', () => {
+    expect(payCutPersonal(zero)).toBeNull()
+    expect(simulateFund(zero).base.totals.personalNet).toBe(0)
   })
 })

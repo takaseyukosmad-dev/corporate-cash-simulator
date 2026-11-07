@@ -10,9 +10,10 @@ export type AssetColumn = {
   insurance: number | null // null: 返戻率が未入力
   hasInsurance: boolean
   dcAsset: number
+  personalNet: number // 個人の報酬の手残り（対策なしだけ。決定C27）
 }
 
-// 比較期間末の資産。各ケースで「法人（現金＋保険）」の積み上げ棒と、「DC（個人）」の棒を離して並べる
+// 比較期間末の資産。各ケースで「法人（現金＋保険）」の積み上げ棒と、「個人（DC＋報酬の手残り）」の積み上げ棒を離して並べる
 export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; years: number }) {
   const width = 720
   const height = 340
@@ -21,7 +22,7 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
   const bottom = 64
   const plotW = width - left - 16
   const plotH = height - top - bottom
-  const maxValue = Math.max(1, ...columns.map((c) => Math.max(0, c.cash) + Math.max(0, c.insurance ?? 0)), ...columns.map((c) => c.dcAsset))
+  const maxValue = Math.max(1, ...columns.map((c) => Math.max(0, c.cash) + Math.max(0, c.insurance ?? 0)), ...columns.map((c) => c.dcAsset + c.personalNet))
   const minValue = Math.min(0, ...columns.map((c) => c.cash))
   const { step, top: yTop } = tightScale(maxValue)
   const yBottom = minValue < 0 ? -Math.ceil(-minValue / step) * step : 0
@@ -30,7 +31,7 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
   for (let v = yBottom; v <= yTop + 1e-6; v += step) ticks.push(v)
   const slot = plotW / columns.length
   const barW = Math.min(56, slot * 0.34)
-  const label = `${years}年後の資産。` + columns.map((c) => `${c.label}: 法人の現金${formatMan(c.cash)}万円、法人保有保険${c.insurance === null ? '未入力' : `${formatMan(c.insurance)}万円`}、DC加入者資産${formatMan(c.dcAsset)}万円`).join('。')
+  const label = `${years}年後の資産。` + columns.map((c) => `${c.label}: 法人の現金${formatMan(c.cash)}万円、法人保有保険${c.insurance === null ? '未入力' : `${formatMan(c.insurance)}万円`}、DC加入者資産${formatMan(c.dcAsset)}万円${c.personalNet > 0 ? `、個人の報酬の手残り${formatMan(c.personalNet)}万円` : ''}`).join('。')
 
   return (
     <svg className="chart fund-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
@@ -62,13 +63,14 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
             <text className="bar-value" x={corpX + barW / 2} y={y(Math.max(0, corporate, c.cash)) - 6} textAnchor="middle">
               {c.insurance === null && c.hasInsurance ? `${formatMan(c.cash)}+?` : formatMan(corporate)}
             </text>
-            {c.dcAsset > 0 && (
-              <>
-                <rect className="fund-dc" x={dcX} y={y(c.dcAsset)} width={barW * 0.8} height={y(0) - y(c.dcAsset)} rx={2} />
-                <text className="bar-value" x={dcX + (barW * 0.8) / 2} y={y(c.dcAsset) - 6} textAnchor="middle">
-                  {formatMan(c.dcAsset)}
-                </text>
-              </>
+            {c.dcAsset > 0 && <rect className="fund-dc" x={dcX} y={y(c.dcAsset)} width={barW * 0.8} height={y(0) - y(c.dcAsset)} rx={2} />}
+            {c.personalNet > 0 && (
+              <rect className="fund-net" x={dcX} y={y(c.dcAsset + c.personalNet)} width={barW * 0.8} height={y(c.dcAsset) - y(c.dcAsset + c.personalNet)} rx={2} />
+            )}
+            {c.dcAsset + c.personalNet > 0 && (
+              <text className="bar-value" x={dcX + (barW * 0.8) / 2} y={y(c.dcAsset + c.personalNet) - 6} textAnchor="middle">
+                {formatMan(c.dcAsset + c.personalNet)}
+              </text>
             )}
             <text className="fund-sub-label" x={corpX + barW / 2} y={top + plotH + 16} textAnchor="middle">
               法人

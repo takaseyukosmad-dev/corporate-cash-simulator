@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { PREFECTURES } from '../data/prefectures.ts'
-import { personalSocialInsuranceSaving, socialInsuranceSaving } from '../calc/fundFormation/simulateFund.ts'
+import { payCutPersonal, socialInsuranceSaving } from '../calc/fundFormation/simulateFund.ts'
 import { formatYen } from '../shared/format.ts'
 import { type FundField, type FundFormValues, toFundInput } from './fundForm.ts'
 
@@ -109,27 +109,30 @@ function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'o
   )
 }
 
-// 社会保険料の減少の内訳（決定C21）。会社負担分は会社の現金に入り、役員個人の負担分は参考として見せるだけ
-function SocialInsuranceBreakdown({ values }: { values: FundFormValues }) {
+// 役員報酬の減額の内訳（年額・全員分）（決定C21・C27）。
+// 会社の社会保険料の減少は会社の現金に入る。役員個人の手取りの減少は、対策なしの側に「個人の報酬の手残り」として残る
+function PayCutBreakdown({ values }: { values: FundFormValues }) {
   const input = toFundInput(values)
-  if (!input?.payCut.socialInsurance) return null
-  const company = socialInsuranceSaving(input)
-  const personal = personalSocialInsuranceSaving(input)
+  const personal = input && payCutPersonal(input)
+  if (!input || !personal) return null
+  const row = (label: string, value: number, strong?: boolean) => (
+    <div className={strong ? 'strong' : undefined}>
+      <dt>{label}</dt>
+      <dd>{formatYen(value)}／年</dd>
+    </div>
+  )
   return (
-    <dl className="fund-si-breakdown" aria-label="社会保険料の減少の内訳（年額）">
-      <div>
-        <dt>会社負担分（会社の現金が増える）</dt>
-        <dd>{formatYen(company)}／年</dd>
-      </div>
-      <div>
-        <dt>役員個人の負担分（参考。会社の現金には入らない）</dt>
-        <dd>{formatYen(personal)}／年</dd>
-      </div>
-      <div>
-        <dt>合計</dt>
-        <dd>{formatYen(company + personal)}／年</dd>
-      </div>
-    </dl>
+    <section className="fund-si-breakdown" aria-label="役員報酬の減額の内訳（年額）">
+      <dl>{row('会社負担の社会保険料の減少（会社の現金が増える）', socialInsuranceSaving(input))}</dl>
+      <p className="fund-si-breakdown-title">役員個人の手元から減るもの（対策なしでは個人に残る）</p>
+      <dl>
+        {row('報酬', personal.pay)}
+        {row('− 社会保険料（個人負担）', personal.socialInsurance)}
+        {row('− 所得税', personal.incomeTax)}
+        {row('− 住民税', personal.residentTax)}
+        {row('＝ 個人の報酬の手残り', personal.net, true)}
+      </dl>
+    </section>
   )
 }
 
@@ -194,7 +197,7 @@ export function FundInputPanel(props: Props) {
       <section className="input-group">
         <h2>役員報酬減額（任意）</h2>
         <Toggle id="payCutEnabled" label="役員報酬を減額する" props={props} />
-        <p className="help">減額した分を保険に回す前提にはしていません。会社の支出が減り、その分利益が増えます。</p>
+        <p className="help">減額した分を保険に回す前提にはしていません。会社の支出が減り、その分利益が増えます。対策なしでは、減額しない分の報酬から税・社会保険料を引いた手取りが個人に残るものとして比べます。</p>
         {values.payCutEnabled && (
           <div className="fund-sub">
             <Num id="payCutOfficers" label="減額する役員の人数" unit="人" props={props} />
@@ -210,38 +213,35 @@ export function FundInputPanel(props: Props) {
             ) : (
               <Num id="payCutTotalMan" label="年間の総減額（全員分）" unit="万円" decimal help="1人あたりの月額は「総額 ÷ 12か月 ÷ 人数」として扱います。" props={props} />
             )}
-            <p className="fund-sub-title">会社負担の社会保険料の減少も計算する（任意）</p>
+            <p className="fund-sub-title">減額する役員の条件（社会保険料・所得税・住民税の計算に使う）</p>
             <Num
               id="payCutPayBefore"
-              label="減額前の報酬月額（空欄なら計算しない）"
+              label="減額前の報酬月額（1人あたり）"
               unit="円"
-              help="令和8年度の料率で、会社負担分と役員個人の負担分（同額）の減少を計算します。内訳は下と、比較表の「初年度」に出ます。会社の現金に入るのは会社負担分だけです。"
+              help="令和8年度の料率・税率で、「役員報酬・退職金 比較シミュレーター」と同じ計算をします。役員が複数のときは全員同じ条件として計算します。"
               props={props}
             />
-            {values.payCutPayBefore.trim() !== '' && (
-              <>
-                <Num id="payCutAge" label="年齢" unit="歳" props={props} />
-                <div className="row">
-                  <label htmlFor="fund-payCutPrefecture">都道府県</label>
-                  <select
-                    id="fund-payCutPrefecture"
-                    value={values.payCutPrefecture}
-                    onChange={(e) => onChange('payCutPrefecture', e.target.value)}
-                    onBlur={() => onBlur('payCutPrefecture')}
-                    {...invalid('payCutPrefecture', props)}
-                  >
-                    <option value="">選んでください</option>
-                    {PREFECTURES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                  <Messages id="payCutPrefecture" props={props} />
-                </div>
-                <SocialInsuranceBreakdown values={values} />
-              </>
-            )}
+            <Num id="payCutAge" label="年齢" unit="歳" props={props} />
+            <div className="row">
+              <label htmlFor="fund-payCutPrefecture">都道府県</label>
+              <select
+                id="fund-payCutPrefecture"
+                value={values.payCutPrefecture}
+                onChange={(e) => onChange('payCutPrefecture', e.target.value)}
+                onBlur={() => onBlur('payCutPrefecture')}
+                {...invalid('payCutPrefecture', props)}
+              >
+                <option value="">選んでください</option>
+                {PREFECTURES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <Messages id="payCutPrefecture" props={props} />
+            </div>
+            <Num id="payCutDependents" label="扶養人数（16歳以上）" unit="人" props={props} />
+            <PayCutBreakdown values={values} />
           </div>
         )}
       </section>

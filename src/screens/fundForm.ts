@@ -30,9 +30,10 @@ export type FundFormValues = {
   payCutMode: 'perOfficer' | 'total' // 1人あたり月額で入れる ／ 年間の総額で入れる
   payCutMonthly: string // 1人あたり月額減額（円）
   payCutTotalMan: string // 年間総減額（万円）
-  payCutPayBefore: string // 減額前の報酬月額（円）。空欄なら社会保険料の減少は計算しない
+  payCutPayBefore: string // 減額前の報酬月額（円）。減額するとき必須（決定C27）
   payCutAge: string
   payCutPrefecture: string
+  payCutDependents: string // 扶養人数（16歳以上の一般の扶養親族。元のアプリと同じ）
 }
 
 export type FundField = keyof FundFormValues
@@ -67,6 +68,7 @@ export const EMPTY_FUND_FORM: FundFormValues = {
   payCutPayBefore: '',
   payCutAge: '',
   payCutPrefecture: '',
+  payCutDependents: '0',
 }
 
 // デモ用の仮データ（架空の会社）。打ち合わせ・資料の説明例をもとにした値で、実在の保険商品の値ではない
@@ -90,6 +92,9 @@ export const DEMO_FUND_FORM: FundFormValues = {
   payCutEnabled: true,
   payCutOfficers: '1',
   payCutMonthly: '500,000',
+  payCutPayBefore: '1,000,000',
+  payCutAge: '50',
+  payCutPrefecture: '東京都',
 }
 
 const MAN = 10_000
@@ -118,8 +123,9 @@ const RULES: Partial<Record<FundField, Rule>> = {
   payCutOfficers: { label: '減額する役員の人数', min: 1, max: 50, decimals: 0 },
   payCutMonthly: { label: '1人あたり月額減額', min: 0, max: 99_999_999, decimals: 0 },
   payCutTotalMan: { label: '年間の総減額', min: 0, max: 99_999, decimals: 1 },
-  payCutPayBefore: { label: '減額前の報酬月額', min: 1, max: 99_999_999, decimals: 0, optional: true },
+  payCutPayBefore: { label: '減額前の報酬月額', min: 1, max: 99_999_999, decimals: 0 },
   payCutAge: { label: '年齢', min: 15, max: 100, decimals: 0 },
+  payCutDependents: { label: '扶養人数', min: 0, max: 10, decimals: 0 },
 }
 
 const WELFARE_FIELDS: FundField[] = ['welfarePremiumMan', 'welfareDeductible', 'welfareMaturityRate']
@@ -174,8 +180,7 @@ export function validateFundForm(v: FundFormValues): Partial<Record<FundField, s
     if (v.officerEnabled) fields.push('officerPaidUpRate')
   }
   if (v.payCutEnabled) {
-    fields.push('payCutOfficers', v.payCutMode === 'perOfficer' ? 'payCutMonthly' : 'payCutTotalMan', 'payCutPayBefore')
-    if (v.payCutPayBefore.trim() !== '') fields.push('payCutAge')
+    fields.push('payCutOfficers', v.payCutMode === 'perOfficer' ? 'payCutMonthly' : 'payCutTotalMan', 'payCutPayBefore', 'payCutAge', 'payCutDependents')
   }
   for (const key of fields) checkNumber(key, v[key] as string, errors)
   if (v.companyName.trim().length > COMPANY_NAME_MAX) errors.companyName = `法人名は${COMPANY_NAME_MAX}文字以内で入力してください。`
@@ -185,7 +190,7 @@ export function validateFundForm(v: FundFormValues): Partial<Record<FundField, s
   if (!errors.dcYears && years !== null && dcYears !== null && dcYears > years) {
     errors.dcYears = 'DC拠出期間は比較期間以下にしてください。'
   }
-  if (v.payCutEnabled && v.payCutPayBefore.trim() !== '') {
+  if (v.payCutEnabled) {
     if (!PREFECTURES.includes(v.payCutPrefecture as Prefecture)) errors.payCutPrefecture = '都道府県を選んでください。'
     const before = parseNumber(v.payCutPayBefore)
     const cut = monthlyCutPerOfficer(v)
@@ -214,7 +219,6 @@ function insurance(v: FundFormValues, prefix: 'welfare' | 'officer'): InsuranceP
 export function toFundInput(v: FundFormValues): FundInput | null {
   if (Object.keys(validateFundForm(v)).length > 0) return null
   const years = num(v.years)
-  const withSi = v.payCutEnabled && v.payCutPayBefore.trim() !== ''
   return {
     annualProfit: num(v.annualProfitMan) * MAN,
     years,
@@ -232,8 +236,13 @@ export function toFundInput(v: FundFormValues): FundInput | null {
       enabled: v.payCutEnabled,
       officers: v.payCutEnabled ? num(v.payCutOfficers) : 0,
       monthlyCutPerOfficer: v.payCutEnabled ? (monthlyCutPerOfficer(v) ?? 0) : 0,
-      socialInsurance: withSi
-        ? { payBefore: num(v.payCutPayBefore), age: num(v.payCutAge), prefecture: v.payCutPrefecture as Prefecture }
+      officer: v.payCutEnabled
+        ? {
+            payBefore: num(v.payCutPayBefore),
+            age: num(v.payCutAge),
+            prefecture: v.payCutPrefecture as Prefecture,
+            dependents: num(v.payCutDependents),
+          }
         : null,
     },
     paidUpYears: paidUpOn(v) ? num(v.paidUpYears) : null,
