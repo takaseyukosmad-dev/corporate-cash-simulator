@@ -51,6 +51,8 @@ npm run mock     # 確認用モック（mock/index.html）を作り直す
 
 ## 公開（Cloudflare）
 
+メンテナンス中の表示: `src/maintenance.ts` の `MAINTENANCE_MODE` を true にして GitHub に送ると、画面が「ただいまメンテナンス中です」の案内だけになる。false に戻して送ると再公開される（決定C26）。
+
 公開URL: https://corporate-cash-simulator.takase-yuko-smad.workers.dev
 
 元のアプリと同じく、Cloudflare Workers で静的サイトとして公開している。設定は `wrangler.jsonc`（ビルドした `dist/` をそのまま公開）。

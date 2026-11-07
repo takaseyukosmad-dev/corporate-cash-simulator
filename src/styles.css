@@ -91,6 +91,12 @@ a { color: inherit; }
 .app-footer-logo { height: 30px; width: auto; display: block; opacity: 0.9; }
 .app-footer p { margin: 0; font-size: 13px; }
 
+/* メンテナンス中の表示（決定C26） */
+.maintenance { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+.maintenance-card { max-width: 560px; width: 100%; text-align: center; padding: 40px 28px; border-top: 4px solid var(--c3); }
+.maintenance-card h1 { margin: 0 0 16px; font-size: 22px; color: var(--navy); }
+.maintenance-card p { margin: 0 0 8px; color: var(--muted); }
+
 /* ---------- 本体 ---------- */
 /* フッターを画面のいちばん下に置く */
 #root { min-height: 100vh; display: flex; flex-direction: column; }
