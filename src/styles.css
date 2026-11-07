@@ -690,18 +690,43 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .fund-year-select label { font-weight: 700; }
 .fund-year-select select { min-height: 38px; padding: 4px 10px; font: inherit; border: 1px solid #b9c1cc; border-radius: 8px; }
 
-/* スマホ幅: 比較表の項目名が1文字幅に潰れないようにし、横スクロールしても左端に残す。
-   計算の流れは説明を行の下に出す（2段） */
+/* スマホ幅: 比較表は項目ごとのカード型（項目名の下にケースごとの金額を縦に並べる）。
+   計算の流れは説明を行の下に出す（2段）。グラフは画面の幅に収める */
 @media (max-width: 640px) {
-  table.fund-table:not(.fund-year-table) tbody tr:not(.group) th {
-    min-width: 8.5em;
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--card);
+  table.fund-table:not(.fund-year-table) thead { display: none; }
+  table.fund-table:not(.fund-year-table),
+  table.fund-table:not(.fund-year-table) tbody,
+  table.fund-table:not(.fund-year-table) tr,
+  table.fund-table:not(.fund-year-table) th,
+  table.fund-table:not(.fund-year-table) td { display: block; width: 100%; }
+  table.fund-table:not(.fund-year-table) tr { border-bottom: 1px solid var(--border); padding: 10px 0; }
+  table.fund-table:not(.fund-year-table) tbody th { border-bottom: none; font-weight: 700; padding: 0 0 6px; }
+  table.fund-table:not(.fund-year-table) td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: none;
+    padding: 3px 8px;
+    border-radius: 6px;
   }
-  table.fund-table:not(.fund-year-table) tbody tr.stop:not(.group) th { background: var(--accent-tint); }
-  table.fund-table:not(.fund-year-table) thead th:first-child { position: sticky; left: 0; z-index: 2; }
+  table.fund-table:not(.fund-year-table) td::before {
+    content: attr(data-label);
+    white-space: normal;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+    text-align: left;
+  }
+  table.fund-table:not(.fund-year-table) tr.group { border-bottom: none; padding: 16px 0 0; }
+  table.fund-table:not(.fund-year-table) tr.group th { padding: 8px 10px; border-radius: 6px; }
+
+  svg.chart.fund-chart { min-width: 0; }
+  /* 縮めると文字も小さくなるので、はみ出さない範囲で少し大きくする */
+  svg.chart.fund-chart .bar-value { font-size: 16px; }
+  svg.chart.fund-chart .fund-sub-label { font-size: 15px; }
+  svg.chart.fund-chart .axis-label text { font-size: 14px; }
 
   table.fund-flow tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-bottom: 1px solid var(--border); }
   table.fund-flow th, table.fund-flow td { border-bottom: none; }
