@@ -42,7 +42,18 @@ export type PayCutPersonal = {
   socialInsurance: number // 個人負担の社会保険料の減少
   incomeTax: number // 所得税の減少
   residentTax: number // 住民税の減少
-  net: number // 手取りの減少（= 個人の報酬の手残り。対策なしの側に残る）
+  net: number // 手取りの減少（減額前の手取り − 減額後の手取り）
+  before: PayNet // 減額前の報酬とその手取り（年額・人数分）
+  after: PayNet // 減額後の報酬とその手取り（年額・人数分）
+}
+
+// 役員報酬の手取り（年額・人数分）。手取り = 報酬 − 社会保険料（個人負担） − 所得税 − 住民税
+export type PayNet = {
+  pay: number
+  socialInsurance: number
+  incomeTax: number
+  residentTax: number
+  net: number
 }
 
 export type FundInput = {
@@ -107,7 +118,8 @@ export type FundTotals = {
   corporateAssets: number | null // 法人保有の現金＋保険評価額
   dcAsset: number // DC加入者の資産（個人の資産。法人の資産ではない）
   dcContribution: number // DC掛金の累計
-  // 個人の報酬の手残り（累計）。対策なしで、減額しない分の報酬から税・社会保険料を引いた額。対策ありは0円（決定C27）
+  // 個人の報酬の手残り（累計）。役員報酬から社会保険料（個人負担）・所得税・住民税を引いた手取りの累計（決定C27・C30）。
+  // 対策なしは減額前の報酬、対策ありは減額後の報酬（払済のケースは払済の翌年から減額前に戻す）
   personalNet: number
   referenceTotal: number | null // 参考総額（法人資産＋DC加入者資産＋個人の報酬の手残り。帰属が違うものの合計）
 }
@@ -116,6 +128,8 @@ export type ScenarioResult = {
   key: ScenarioKey
   label: string // 通常（期間末まで払込） ／ 10年で払済 など
   premiumYears: { welfare: number; officer: number }
+  // 役員報酬を減額する年数。払済のケースは払込年数まで（払済の翌年から報酬を元に戻す: 決定C30）
+  payCutYears: number
   rows: FundYearRow[]
   welfare: InsuranceOutcome | null // 使わない保険は null
   officer: InsuranceOutcome | null

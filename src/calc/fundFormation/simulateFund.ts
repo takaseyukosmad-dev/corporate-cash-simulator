@@ -11,6 +11,7 @@ import type {
   InsuranceOutcome,
   InsurancePlan,
   PayCutPersonal,
+  PayNet,
   ScenarioKey,
   ScenarioResult,
 } from './types.ts'
@@ -58,7 +59,22 @@ export function payCutPersonal(input: FundInput): PayCutPersonal | null {
   const socialInsurance = yearly(b.socialInsurance - a.socialInsurance)
   const incomeTax = yearly(b.incomeTax - a.incomeTax)
   const residentTax = yearly(b.residentTax - a.residentTax)
-  return { pay, socialInsurance, incomeTax, residentTax, net: pay - socialInsurance - incomeTax - residentTax }
+  const netOf = (monthlyPay: number, d: { socialInsurance: number; incomeTax: number; residentTax: number }): PayNet => ({
+    pay: yearly(monthlyPay),
+    socialInsurance: yearly(d.socialInsurance),
+    incomeTax: yearly(d.incomeTax),
+    residentTax: yearly(d.residentTax),
+    net: yearly(monthlyPay - d.socialInsurance - d.incomeTax - d.residentTax),
+  })
+  return {
+    pay,
+    socialInsurance,
+    incomeTax,
+    residentTax,
+    net: pay - socialInsurance - incomeTax - residentTax,
+    before: netOf(payBefore, b),
+    after: netOf(after, a),
+  }
 }
 
 export function annualPayCut(input: FundInput): number {
@@ -113,9 +129,13 @@ function baseRows(input: FundInput): BaseYearRow[] {
   return rows
 }
 
-function scenarioRows(input: FundInput, premiumYears: { welfare: number; officer: number }, siSaving: number): FundYearRow[] {
+function scenarioRows(
+  input: FundInput,
+  premiumYears: { welfare: number; officer: number },
+  siSaving: number,
+  payCutYears: number,
+): FundYearRow[] {
   const { dc, welfare, officer } = input
-  const payCut = annualPayCut(input)
   const dcMonthly = dc.members * dc.monthlyPerMember
   const dcAssets = dcAssetByYear(dcMonthly, dc.annualReturnRate, dc.contributionYears, input.years)
   const rows: FundYearRow[] = []
@@ -124,6 +144,10 @@ function scenarioRows(input: FundInput, premiumYears: { welfare: number; officer
   let premiums = 0
   let dcContribCum = 0
   for (let year = 1; year <= input.years; year++) {
+    // 報酬の減額（と会社負担の社会保険料の減少）は、減額する年数のあいだだけ（決定C30）
+    const cutting = year <= payCutYears
+    const payCut = cutting ? annualPayCut(input) : 0
+    const siSavingYear = cutting ? siSaving : 0
     const dcContribution = year <= dc.contributionYears ? dcMonthly * 12 : 0
     // 選択制（給与から振替）は、給与の減少と掛金が相殺されるため会社の費用は増えない（二重計上しない）
     const dcCompanyCost = dc.funding === 'employer' ? dcContribution : 0
@@ -131,9 +155,9 @@ function scenarioRows(input: FundInput, premiumYears: { welfare: number; officer
     const officerPremium = officer.enabled && year <= premiumYears.officer ? officer.annualPremium : 0
     const deductibleInsurance = welfarePremium * pct(welfare.deductibleRate) + officerPremium * pct(officer.deductibleRate)
     const profit = profitIn(input, year)
-    const taxableIncome = profit + payCut + siSaving - dcCompanyCost - deductibleInsurance
+    const taxableIncome = profit + payCut + siSavingYear - dcCompanyCost - deductibleInsurance
     const corporateTax = taxOf(taxableIncome, input.corporateTaxRate)
-    const cashFlow = profit + payCut + siSaving - dcCompanyCost - welfarePremium - officerPremium - corporateTax
+    const cashFlow = profit + payCut + siSavingYear - dcCompanyCost - welfarePremium - officerPremium - corporateTax
     cash += cashFlow
     tax += corporateTax
     premiums += welfarePremium + officerPremium
@@ -141,7 +165,7 @@ function scenarioRows(input: FundInput, premiumYears: { welfare: number; officer
     rows.push({
       year,
       payCut,
-      socialInsuranceSaving: siSaving,
+      socialInsuranceSaving: siSavingYear,
       dcContribution,
       dcCompanyCost,
       welfarePremium,
@@ -189,10 +213,18 @@ function diffTotals(after: FundTotals, before: FundTotals): FundTotals {
   }
 }
 
-function scenario(key: ScenarioKey, input: FundInput, siSaving: number, baseTotals: FundTotals): ScenarioResult {
+function scenario(
+  key: ScenarioKey,
+  input: FundInput,
+  siSaving: number,
+  personal: PayCutPersonal | null,
+  baseTotals: FundTotals,
+): ScenarioResult {
   const years = premiumYearsFor(key, input)
   const premiumYears = { welfare: years, officer: years }
-  const rows = scenarioRows(input, premiumYears, siSaving)
+  // 払済のケースは、払済にした翌年から役員報酬を元に戻す（決定C30）
+  const payCutYears = years
+  const rows = scenarioRows(input, premiumYears, siSaving, payCutYears)
   const last = rows[rows.length - 1]
   const welfare = insuranceOutcome(input.welfare, key, premiumYears.welfare)
   const officer = insuranceOutcome(input.officer, key, premiumYears.officer)
@@ -200,11 +232,13 @@ function scenario(key: ScenarioKey, input: FundInput, siSaving: number, baseTota
   const insurance = outcomes.some((o) => o.surrenderValue === null)
     ? null
     : outcomes.reduce((sum, o) => sum + (o.surrenderValue ?? 0), 0)
-  const t = totals(last.cashCumulative, last.taxCumulative, insurance, last.dcAsset, last.dcContributionCumulative)
+  const personalNet = personal ? personal.after.net * payCutYears + personal.before.net * (input.years - payCutYears) : 0
+  const t = totals(last.cashCumulative, last.taxCumulative, insurance, last.dcAsset, last.dcContributionCumulative, personalNet)
   return {
     key,
     label: scenarioLabel(key, input),
     premiumYears,
+    payCutYears,
     rows,
     welfare,
     officer,
@@ -259,10 +293,10 @@ export function simulateFund(input: FundInput): FundResult {
   const siSaving = socialInsuranceSaving(input)
   const rows = baseRows(input)
   const last = rows[rows.length - 1]
-  // 対策なし: 保険・DCはない（保険評価額は0円）。減額しない分の報酬の手取りが個人に残る（決定C27）
+  // 対策なし: 保険・DCはない（保険評価額は0円）。役員には減額前の報酬を払い、その手取りが個人に残る（決定C27・C30）
   const personal = payCutPersonal(input)
-  const baseTotals = totals(last.cashCumulative, last.taxCumulative, 0, 0, 0, (personal?.net ?? 0) * input.years)
-  const scenarios = scenarioKeys(input).map((key) => scenario(key, input, siSaving, baseTotals))
+  const baseTotals = totals(last.cashCumulative, last.taxCumulative, 0, 0, 0, (personal?.before.net ?? 0) * input.years)
+  const scenarios = scenarioKeys(input).map((key) => scenario(key, input, siSaving, personal, baseTotals))
   return {
     base: { rows, totals: baseTotals, firstYear: rows[0] },
     scenarios,

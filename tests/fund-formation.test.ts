@@ -177,7 +177,7 @@ describe('7. 二重計上がない', () => {
   it('DC資産は法人の現金・法人資産に入らない', () => {
     const s = r.scenarios[0]
     expect(s.totals.corporateAssets).toBeCloseTo(s.totals.cash + (s.totals.insurance ?? 0), 6)
-    expect(s.totals.referenceTotal).toBeCloseTo((s.totals.corporateAssets ?? 0) + s.totals.dcAsset, 6)
+    expect(s.totals.referenceTotal).toBeCloseTo((s.totals.corporateAssets ?? 0) + s.totals.dcAsset + s.totals.personalNet, 6)
   })
   it('保険の評価額は払った保険料 × 返戻率だけで、現金とは別', () => {
     const s = r.scenarios[0]
@@ -241,12 +241,20 @@ describe('個人の報酬の手残り（決定C27）', () => {
     expect(p.socialInsurance).toBe(socialInsuranceSaving(input)) // 個人負担の減少 = 会社負担の減少（同額）
     expect(p.net).toBeLessThan(p.pay)
   })
-  it('対策なしに手残りの累計が入り、対策ありは0円。参考総額にも入る', () => {
-    const net = payCutPersonal(input)!.net
-    expect(r.base.totals.personalNet).toBe(net * 20)
-    expect(r.base.totals.referenceTotal).toBe(r.base.totals.cash + net * 20)
-    expect(r.scenarios[0].totals.personalNet).toBe(0)
-    expect(r.scenarios[0].diff.personalNet).toBe(-net * 20)
+  it('減額前・減額後の手取り（年額・人数分）を出す。差は手取りの減少と同じ', () => {
+    const b = monthlyDeductions(1_000_000, 52, '東京都', 1)
+    const a = monthlyDeductions(500_000, 52, '東京都', 1)
+    const p = payCutPersonal(input)!
+    expect(p.before.net).toBe((1_000_000 - b.socialInsurance - b.incomeTax - b.residentTax) * 12 * 2)
+    expect(p.after.net).toBe((500_000 - a.socialInsurance - a.incomeTax - a.residentTax) * 12 * 2)
+    expect(p.before.net - p.after.net).toBe(p.net)
+  })
+  it('対策なしは減額前の手取り、対策ありは減額後の手取りの累計。参考総額にも入る（決定C30）', () => {
+    const p = payCutPersonal(input)!
+    expect(r.base.totals.personalNet).toBe(p.before.net * 20)
+    expect(r.base.totals.referenceTotal).toBe(r.base.totals.cash + p.before.net * 20)
+    expect(r.scenarios[0].totals.personalNet).toBe(p.after.net * 20)
+    expect(r.scenarios[0].diff.personalNet).toBe(-p.net * 20)
   })
   it('法人の現金の計算は変わらない（手残りは個人のお金）', () => {
     const withoutOfficer = simulateFund({ ...input, payCut: { ...input.payCut, officer: null } })
@@ -255,5 +263,40 @@ describe('個人の報酬の手残り（決定C27）', () => {
   it('減額しないときは計算しない', () => {
     expect(payCutPersonal(zero)).toBeNull()
     expect(simulateFund(zero).base.totals.personalNet).toBe(0)
+  })
+})
+
+describe('払済のケースは、払済の翌年から役員報酬を元に戻す（決定C30）', () => {
+  // デモと同じ条件: 月100万円 → 50万円、40歳・東京都・扶養0人、10年で払済
+  const input: FundInput = {
+    ...zero,
+    welfare: welfare(),
+    paidUpYears: 10,
+    payCut: { enabled: true, officers: 1, monthlyCutPerOfficer: 500_000, officer: { payBefore: 1_000_000, age: 40, prefecture: '東京都', dependents: 0 } },
+  }
+  const r = simulateFund(input)
+  const [maturity, paidUp] = r.scenarios
+  const p = payCutPersonal(input)!
+  it('手取りは、月100万円で年853万8,240円、月50万円で年464万7,000円（所得税・住民税・社会保険料を引いた後）', () => {
+    expect(p.before.net).toBe(8_538_240)
+    expect(p.after.net).toBe(4_647_000)
+    // 所得税・住民税も引いている（月100万円: 社会保険料116,805円・所得税102,983円・住民税68,692円／月）
+    expect(p.before).toEqual({ pay: 12_000_000, socialInsurance: 1_401_660, incomeTax: 1_235_796, residentTax: 824_304, net: 8_538_240 })
+    expect(p.after).toEqual({ pay: 6_000_000, socialInsurance: 900_000, incomeTax: 147_504, residentTax: 305_496, net: 4_647_000 })
+  })
+  it('個人の報酬の手残り: 対策なし＝100万円の手取り×20年、通常＝50万円の手取り×20年、払済＝50万円×10年＋100万円×10年', () => {
+    expect(r.base.totals.personalNet).toBe(170_764_800)
+    expect(maturity.totals.personalNet).toBe(92_940_000)
+    expect(paidUp.totals.personalNet).toBe(46_470_000 + 85_382_400)
+  })
+  it('会社の計算も、払済のケースは11年目から報酬の減額と社会保険料の減少がなくなる。通常は20年続く', () => {
+    expect(paidUp.payCutYears).toBe(10)
+    expect(maturity.payCutYears).toBe(20)
+    expect(paidUp.rows.slice(0, 10).every((x) => x.payCut === 6_000_000 && x.socialInsuranceSaving === r.annualSocialInsuranceSaving)).toBe(true)
+    expect(paidUp.rows.slice(10).every((x) => x.payCut === 0 && x.socialInsuranceSaving === 0)).toBe(true)
+    expect(maturity.rows.every((x) => x.payCut === 6_000_000)).toBe(true)
+    // 11年目以降は保険料も報酬減額もないので、対策なしと同じ利益・法人税になる
+    expect(paidUp.rows[10].taxableIncome).toBe(r.base.rows[10].taxableIncome)
+    expect(paidUp.rows[10].cashFlow).toBe(r.base.rows[10].cashFlow)
   })
 })

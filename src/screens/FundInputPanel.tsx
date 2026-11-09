@@ -109,8 +109,8 @@ function InsuranceGroup({ prefix, title, lead, props }: { prefix: 'welfare' | 'o
   )
 }
 
-// 役員報酬の減額の内訳（年額・全員分）（決定C21・C27）。
-// 会社の社会保険料の減少は会社の現金に入る。役員個人の手取りの減少は、対策なしの側に「個人の報酬の手残り」として残る
+// 役員報酬の減額の内訳（年額・全員分）（決定C21・C27・C30）。
+// 会社の社会保険料の減少は会社の現金に入る。役員個人の手取りは、減額した分だけ減る（個人の報酬の手残りの差）
 function PayCutBreakdown({ values }: { values: FundFormValues }) {
   const input = toFundInput(values)
   const personal = input && payCutPersonal(input)
@@ -124,13 +124,18 @@ function PayCutBreakdown({ values }: { values: FundFormValues }) {
   return (
     <section className="fund-si-breakdown" aria-label="役員報酬の減額の内訳（年額）">
       <dl>{row('会社負担の社会保険料の減少（会社の現金が増える）', socialInsuranceSaving(input))}</dl>
-      <p className="fund-si-breakdown-title">役員個人の手元から減るもの（対策なしでは個人に残る）</p>
+      <p className="fund-si-breakdown-title">役員個人の手元から減るもの（減額前と減額後の差）</p>
       <dl>
         {row('報酬', personal.pay)}
         {row('− 社会保険料（個人負担）', personal.socialInsurance)}
         {row('− 所得税', personal.incomeTax)}
         {row('− 住民税', personal.residentTax)}
-        {row('＝ 個人の報酬の手残り', personal.net, true)}
+        {row('＝ 手取りの減少', personal.net, true)}
+      </dl>
+      <p className="fund-si-breakdown-title">役員個人の手取り（個人の報酬の手残り）</p>
+      <dl>
+        {row('減額前', personal.before.net)}
+        {row('減額後', personal.after.net, true)}
       </dl>
     </section>
   )
@@ -197,7 +202,7 @@ export function FundInputPanel(props: Props) {
       <section className="input-group">
         <h2>役員報酬減額（任意）</h2>
         <Toggle id="payCutEnabled" label="役員報酬を減額する" props={props} />
-        <p className="help">減額した分を保険に回す前提にはしていません。会社の支出が減り、その分利益が増えます。対策なしでは、減額しない分の報酬から税・社会保険料を引いた手取りが個人に残るものとして比べます。</p>
+        <p className="help">減額した分を保険に回す前提にはしていません。会社の支出が減り、その分利益が増えます。役員の手取り（報酬から所得税・住民税・社会保険料を引いた額）を、対策なしは減額前、対策ありは減額後の報酬で計算して比べます。払済のケースは、払済の翌年から報酬を元に戻します。</p>
         {values.payCutEnabled && (
           <div className="fund-sub">
             <Num id="payCutOfficers" label="減額する役員の人数" unit="人" props={props} />

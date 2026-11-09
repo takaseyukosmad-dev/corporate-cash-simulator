@@ -814,8 +814,10 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .conclusion { margin-bottom: 3mm; padding: 3mm 5mm; }
 .print-page .conclusion-lead { font-size: 13px; }
 .print-page .conclusion-sub { font-size: 11px; }
-.print-page .fund-kpis { gap: 3mm; margin-bottom: 2mm; grid-template-columns: repeat(auto-fit, minmax(50mm, 1fr)); }
-.print-page .fund-kpi { padding: 2mm 3mm; }
+/* 横いっぱいにカードを並べる（グリッドだと注記の行が空の列を作り、カードが細くなって行が折り返していた） */
+.print-page .fund-kpis { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 2mm; }
+.print-page .fund-kpi { padding: 2mm 3mm; flex: 1 1 0; min-width: 0; }
+.print-page .fund-kpi-note { flex-basis: 100%; }
 .print-page .fund-kpi-value { font-size: 16px; }
 .print-page .fund-kpi-note { font-size: 9.5px; }
 .print-page svg.chart { min-width: 0; max-height: 44mm; }

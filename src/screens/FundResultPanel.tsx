@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { annualDcContribution, annualPayCut, profitIn } from '../calc/fundFormation/simulateFund.ts'
-import type { FundInput, FundResult, FundYearRow, InsuranceOutcome, ScenarioResult } from '../calc/fundFormation/types.ts'
+import type { FundInput, FundResult, FundYearRow, InsuranceOutcome, PayCutPersonal, PayNet, ScenarioResult } from '../calc/fundFormation/types.ts'
 import { formatMan, formatRate, formatSignedYen, formatYen } from '../shared/format.ts'
 import { formatManYen, formatSignedManYen } from '../shared/money.ts'
 import { AssetBarChart, CashLineChart } from './FundCharts.tsx'
@@ -72,7 +72,7 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
     const b = f(maturity)
     return a === null || b === null ? NOT_ENTERED : formatSignedYen(a - b)
   }
-  // 個人の報酬の手残り（決定C27）。役員報酬を減額するときだけ行を出す
+  // 個人の報酬の手残り（決定C27・C30）。役員報酬を減額するときだけ行を出す
   const net = columns[0].totals.personalNet > 0
   const groups: { title: string; rows: Row[] }[] = [
     // 打ち合わせ相手の依頼（2026-10-27）: 対策なしとの差を表の一番上に（決定C22）
@@ -96,7 +96,7 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
         { label: '法人保有の現金＋保険評価額', pick: (c) => yen(c.totals.corporateAssets) },
         { label: 'DC加入者資産（個人の資産）', pick: (c) => yen(c.totals.dcAsset) },
         { label: 'DC掛金の累計', pick: (c) => yen(c.totals.dcContribution) },
-        ...(net ? [{ label: '個人の報酬の手残り（税・社会保険料を引いた後の累計）', pick: (c: Column) => yen(c.totals.personalNet) }] : []),
+        ...(net ? [{ label: '個人の報酬の手残り（役員報酬から所得税・住民税・社会保険料（個人負担）を引いた後の累計）', pick: (c: Column) => yen(c.totals.personalNet) }] : []),
         ...(showReference ? [{ label: '参考総額（法人保有＋DC加入者資産＋個人の報酬の手残り。帰属が異なる合計）', pick: (c: Column) => yen(c.totals.referenceTotal) }] : []),
       ],
     },
@@ -250,13 +250,7 @@ export function BasisList({ input, result }: { input: FundInput; result: FundRes
           役員報酬の減額 R = {input.payCut.officers}人 × {formatYen(input.payCut.monthlyCutPerOfficer)} × 12か月 = {formatYen(annualPayCut(input))}／年
           {result.socialInsuranceComputed ? `、会社負担の社会保険料の減少 S = ${formatYen(result.annualSocialInsuranceSaving)}／年（令和8年度の料率。役員個人の負担分も同じ ${formatYen(result.annualPersonalSocialInsuranceSaving)}／年減りますが、会社の現金には入れません）` : '、会社負担の社会保険料の減少 S は計算していません（0円）'}
         </li>
-        {result.payCutPersonal && (
-          <li>
-            個人の報酬の手残り（対策なし） = 減額しない分の報酬 {formatYen(result.payCutPersonal.pay)} − 社会保険料（個人負担） {formatYen(result.payCutPersonal.socialInsurance)} − 所得税{' '}
-            {formatYen(result.payCutPersonal.incomeTax)} − 住民税 {formatYen(result.payCutPersonal.residentTax)} = {formatYen(result.payCutPersonal.net)}／年 × {input.years}年。
-            「役員報酬・退職金 比較シミュレーター」と同じ計算（令和8年度。住民税は同じ年の所得で計算）。対策ありでは0円です。
-          </li>
-        )}
+        {result.payCutPersonal && <PersonalNetBasis input={input} result={result} personal={result.payCutPersonal} />}
         <li>
           DC掛金 = {dc.members}人 × {formatYen(dc.monthlyPerMember)} × 12か月 = {formatYen(annualDcContribution(input))}／年（{dc.contributionYears}年間）。
           会社が福利厚生費として拠出するため、全額を会社の費用 D とします。
@@ -275,6 +269,35 @@ export function BasisList({ input, result }: { input: FundInput; result: FundRes
   )
 }
 
+// 個人の報酬の手残りの根拠（決定C27・C30）: 減額前・減額後の手取りの内訳と、ケースごとの年数
+function PersonalNetBasis({ input, result, personal }: { input: FundInput; result: FundResult; personal: PayCutPersonal }) {
+  const line = (name: string, p: PayNet) =>
+    `${name}の手取り = 報酬 ${formatYen(p.pay)} − 社会保険料（個人負担） ${formatYen(p.socialInsurance)} − 所得税 ${formatYen(p.incomeTax)} − 住民税 ${formatYen(p.residentTax)} = ${formatYen(p.net)}／年`
+  const n = input.years
+  return (
+    <li>
+      個人の報酬の手残り = 役員報酬から社会保険料（個人負担）・所得税・住民税を引いた手取りの累計（{input.payCut.officers}人分）。
+      「役員報酬・退職金 比較シミュレーター」と同じ計算（令和8年度。住民税は同じ年の所得で計算）。
+      <br />
+      {line('減額前', personal.before)}
+      <br />
+      {line('減額後', personal.after)}
+      <br />
+      対策なし = 減額前の手取り × {n}年 = {formatYen(result.base.totals.personalNet)}
+      {result.scenarios.map((s) => (
+        <span key={s.key}>
+          <br />
+          対策あり：{s.label} ={' '}
+          {s.payCutYears >= n
+            ? `減額後の手取り × ${n}年`
+            : `減額後の手取り × ${s.payCutYears}年 ＋ 減額前の手取り × ${n - s.payCutYears}年（払済の翌年から報酬を元に戻す）`}{' '}
+          = {formatYen(s.totals.personalNet)}
+        </span>
+      ))}
+    </li>
+  )
+}
+
 function Basis({ input, result }: { input: FundInput; result: FundResult }) {
   return (
     <details className="card fund-basis">
@@ -285,20 +308,21 @@ function Basis({ input, result }: { input: FundInput; result: FundResult }) {
 }
 
 // 結論の2文
-// 結論: 法人現金＋法人保険返戻金＋個人DC資産の合計で、対策なしと比べる（決定C20。打ち合わせ相手の文のとおり）。
-// 個人DC資産は法人の資産ではないため、2行目に金額を分けて示す
+// 結論: 法人現金＋法人保険返戻金＋個人DC資産（＋個人の報酬の手残り）の合計で、対策なしと比べる（決定C20・C30）。
+// 個人DC資産・個人の報酬の手残りは法人の資産ではないため、2行目に金額を分けて示す
 export function Conclusion({ result, columns, years }: { result: FundResult; columns: Column[]; years: number }) {
   const main = columns[1].scenario!
   const parts = [
     '法人現金',
     ...(main.welfare || main.officer ? ['法人保険返戻金'] : []),
     ...(main.totals.dcAsset > 0 ? ['個人DC資産'] : []),
+    ...(main.totals.personalNet > 0 ? ['個人の報酬の手残り'] : []),
   ].join('＋')
   // 画面に出す「法人保有」「個人DC資産」（万円に丸めた値）を足した合計にする（読んだ人が足し算して1万円ずれないように）
   const man = (v: number) => Math.round(v / 10_000) * 10_000
   const corporate = main.totals.corporateAssets
-  const total = corporate === null ? null : man(corporate) + man(main.totals.dcAsset)
-  // 対策なしは、法人現金に、減額しない分の報酬の手残り（個人）を足して比べる（決定C27）
+  const total = corporate === null ? null : man(corporate) + man(main.totals.dcAsset) + man(main.totals.personalNet)
+  // 対策なしは、法人現金に、減額前の報酬の手残り（個人）を足して比べる（決定C27・C30）
   const basePersonal = result.base.totals.personalNet
   const baseTotal = man(result.base.totals.cash) + man(basePersonal)
   const diff = total === null ? null : total - baseTotal
@@ -331,7 +355,8 @@ export function Conclusion({ result, columns, years }: { result: FundResult; col
         （個人DC資産は <strong className="conclusion-dc">{formatManYen(main.totals.dcAsset)}</strong>
         {basePersonal > 0 && (
           <>
-            、対策なしの個人の報酬の手残りは <strong className="conclusion-dc">{formatManYen(basePersonal)}</strong>
+            、個人の報酬の手残りは対策ありで <strong className="conclusion-dc">{formatManYen(main.totals.personalNet)}</strong>・対策なしで{' '}
+            <strong className="conclusion-dc">{formatManYen(basePersonal)}</strong>
           </>
         )}
         です。いずれも概算で、保証された金額ではありません。）
@@ -437,7 +462,7 @@ export function AssetChart({ columns, years }: { columns: Column[]; years: numbe
         <li><span className="fund-swatch ins" />法人保有保険の解約返戻金（入力した返戻率）</li>
         <li><span className="fund-swatch dc" />DC加入者資産（個人の資産。法人のものではない）</li>
         {columns.some((c) => c.totals.personalNet > 0) && (
-          <li><span className="fund-swatch net" />個人の報酬の手残り（対策なしで、減額しない分の報酬から税・社会保険料を引いた額）</li>
+          <li><span className="fund-swatch net" />個人の報酬の手残り（役員報酬から所得税・住民税・社会保険料を引いた手取りの累計）</li>
         )}
       </ul>
     </>
@@ -482,7 +507,7 @@ export function AssumptionList() {
       <li>保険の返戻率・DCの運用利回りは入力された仮定で、<strong>保証された値ではありません</strong>。返戻率は保険設計書の値を入力してください。</li>
       <li>保険はすべて法人契約（解約返戻金は法人のもの）として計算しています。DC加入者資産は加入者個人のもので、法人の現金・資産には含めていません。</li>
       <li>法人の現金は「この期間に増える分」です。期首の現金残高、預金の利息は含めていません。</li>
-      <li>退職金の支給とその税金、保険の解約益にかかる法人税、DCの受け取り時の税金は<strong>計算していません</strong>（将来の課題）。役員報酬の減額による役員個人の社会保険料・所得税・住民税の変化は、減額した分の手取り（個人の報酬の手残り）として計算しています。</li>
+      <li>退職金の支給とその税金、保険の解約益にかかる法人税、DCの受け取り時の税金は<strong>計算していません</strong>（将来の課題）。役員報酬は、所得税・住民税・社会保険料（個人負担）を引いた手取りを「個人の報酬の手残り」として計算しています（対策なしは減額前、対策ありは減額後の報酬。払済のケースは払済の翌年から報酬を元に戻し、会社の計算でも報酬の減額と社会保険料の減少をなくします）。</li>
       <li>DCの掛金の上限・適用時期・他制度の掛金との調整は、制度の最新情報で確認してください。</li>
     </ul>
   )

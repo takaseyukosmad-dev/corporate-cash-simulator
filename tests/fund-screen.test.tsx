@@ -141,9 +141,10 @@ describe('打ち合わせ相手の依頼（2026-10-27）: 結論の文・表の�
   const result = simulateFund(input)
   const html = renderToStaticMarkup(<FundResultPanel input={input} result={result} showReference={false} onShowReferenceChange={() => {}} />)
   const text = html.replace(/<[^>]+>/g, '')
-  it('結論は法人現金＋法人保険返戻金＋個人DC資産の合計で、対策なしとの差を出す（決定C20）', () => {
-    expect(text).toContain('20年後、対策あり：法人現金＋法人保険返戻金＋個人DC資産で7億1,482万円となり、対策なしの場合の法人現金＋個人の報酬の手残り 4億9,782万円と比べて、2億1,700万円手残りが増えます。')
-    expect(text).toContain('（個人DC資産は 5,623万円、対策なしの個人の報酬の手残りは 7,782万円です。いずれも概算で、保証された金額ではありません。）')
+  it('結論は法人現金＋法人保険返戻金＋個人DC資産＋個人の報酬の手残りの合計で、対策なしとの差を出す（決定C20・C30）', () => {
+    // 対策あり: 6億5,859万円 ＋ 5,623万円 ＋ 9,294万円（月50万円の手取り×20年）、対策なし: 4億2,000万円 ＋ 1億7,076万円（月100万円の手取り×20年）
+    expect(text).toContain('20年後、対策あり：法人現金＋法人保険返戻金＋個人DC資産＋個人の報酬の手残りで8億776万円となり、対策なしの場合の法人現金＋個人の報酬の手残り 5億9,076万円と比べて、2億1,700万円手残りが増えます。')
+    expect(text).toContain('（個人DC資産は 5,623万円、個人の報酬の手残りは対策ありで 9,294万円・対策なしで 1億7,076万円です。いずれも概算で、保証された金額ではありません。）')
   })
   it('対策をしないと同じなら、増える・減るとは書かない', () => {
     const none = toFundInput({ ...EMPTY_FUND_FORM, annualProfitMan: '3000' })!
@@ -180,23 +181,25 @@ describe('役員報酬を減額したときの個人の報酬の手残り（決�
     expect(EMPTY_FUND_FORM.payCutDependents).toBe('0')
     expect(toFundInput(DEMO_FUND_FORM)!.payCut.officer).toEqual({ payBefore: 1_000_000, age: 40, prefecture: '東京都', dependents: 0 })
   })
-  it('対策なしの欄に個人の報酬の手残りが出る', () => {
+  it('各ケースの欄に個人の報酬の手残りが出る（対策なしは減額前、通常は減額後、払済は10年で元に戻す: 決定C30）', () => {
     expect(result.payCutPersonal!.net).toBe(3_891_240)
-    expect(text).toContain('個人の報酬の手残り7,782万円')
-    expect(text).toContain('個人の報酬の手残り（税・社会保険料を引いた後の累計）77,824,800円0円0円')
+    expect(text).toContain('個人の報酬の手残り1億7,076万円')
+    expect(text).toContain('個人の報酬の手残り9,294万円')
+    expect(text).toContain('個人の報酬の手残り（役員報酬から所得税・住民税・社会保険料（個人負担）を引いた後の累計）170,764,800円92,940,000円131,852,400円')
   })
   it('グラフの凡例と計算の根拠に出る', () => {
-    expect(text).toContain('個人の報酬の手残り（対策なしで、減額しない分の報酬から税・社会保険料を引いた額）')
-    expect(text).toContain('= 3,891,240円／年 × 20年')
+    expect(text).toContain('個人の報酬の手残り（役員報酬から所得税・住民税・社会保険料を引いた手取りの累計）')
+    expect(text).toContain('減額前の手取り = 報酬 12,000,000円 − 社会保険料（個人負担） 1,401,660円 − 所得税 1,235,796円 − 住民税 824,304円 = 8,538,240円／年')
+    expect(text).toContain('対策あり：10年で払済 = 減額後の手取り × 10年 ＋ 減額前の手取り × 10年（払済の翌年から報酬を元に戻す） = 131,852,400円')
   })
   it('減額しないときは、手残りの行・文を出さない', () => {
     const none = toFundInput({ ...DEMO_FUND_FORM, payCutEnabled: false })!
     const t = renderToStaticMarkup(<FundResultPanel input={none} result={simulateFund(none)} showReference={false} onShowReferenceChange={() => {}} />)
     expect(t).not.toContain('<dt>個人の報酬の手残り</dt>') // 概要カード
     expect(t).not.toContain('fund-swatch net') // グラフの凡例
-    expect(t).not.toContain('個人の報酬の手残り（税・社会保険料を引いた後の累計）') // 比較表
+    expect(t).not.toContain('個人の報酬の手残り（役員報酬から') // 比較表
     expect(t).not.toContain('法人現金＋個人の報酬の手残り') // 結論の文
-    expect(t).not.toContain('個人の報酬の手残り（対策なし） =') // 計算の根拠
+    expect(t).not.toContain('個人の報酬の手残り = 役員報酬から') // 計算の根拠
   })
 })
 
