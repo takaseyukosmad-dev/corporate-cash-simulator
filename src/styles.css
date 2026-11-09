@@ -595,7 +595,7 @@ ul.plain li:last-child { margin-bottom: 0; }
     border-radius: 6px;
   }
 }
-/* ---------- キャッシュ増加シュミレーター ---------- */
+/* ---------- キャッシュ増加シミュレーター ---------- */
 :root {
   --fund-cash: #1e4f9c; /* 法人の現金 */
   --fund-ins: #f4a259; /* 法人保有保険 */

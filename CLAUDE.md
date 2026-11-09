@@ -1,4 +1,4 @@
-# キャッシュ増加シュミレーター
+# キャッシュ増加シミュレーター
 
 `README.md` の内容のアプリ。要件は `docs/requirements.md`、決まったこと・仮決めは `docs/decisions.md`。
 

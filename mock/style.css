@@ -595,7 +595,7 @@ ul.plain li:last-child { margin-bottom: 0; }
     border-radius: 6px;
   }
 }
-/* ---------- キャッシュ増加シュミレーター ---------- */
+/* ---------- キャッシュ増加シミュレーター ---------- */
 :root {
   --fund-cash: #1e4f9c; /* 法人の現金 */
   --fund-ins: #f4a259; /* 法人保有保険 */
@@ -689,6 +689,51 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .fund-year-select { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
 .fund-year-select label { font-weight: 700; }
 .fund-year-select select { min-height: 38px; padding: 4px 10px; font: inherit; border: 1px solid #b9c1cc; border-radius: 8px; }
+
+/* スマホ幅: 比較表は項目ごとのカード型（項目名の下にケースごとの金額を縦に並べる）。
+   計算の流れは説明を行の下に出す（2段）。グラフは画面の幅に収める */
+@media (max-width: 640px) {
+  table.fund-table:not(.fund-year-table) thead { display: none; }
+  table.fund-table:not(.fund-year-table),
+  table.fund-table:not(.fund-year-table) tbody,
+  table.fund-table:not(.fund-year-table) tr,
+  table.fund-table:not(.fund-year-table) th,
+  table.fund-table:not(.fund-year-table) td { display: block; width: 100%; }
+  table.fund-table:not(.fund-year-table) tr { border-bottom: 1px solid var(--border); padding: 10px 0; }
+  table.fund-table:not(.fund-year-table) tbody th { border-bottom: none; font-weight: 700; padding: 0 0 6px; }
+  table.fund-table:not(.fund-year-table) td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: none;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  table.fund-table:not(.fund-year-table) td::before {
+    content: attr(data-label);
+    white-space: normal;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+    text-align: left;
+  }
+  table.fund-table:not(.fund-year-table) tr.group { border-bottom: none; padding: 16px 0 0; }
+  table.fund-table:not(.fund-year-table) tr.group th { padding: 8px 10px; border-radius: 6px; }
+
+  svg.chart.fund-chart { min-width: 0; }
+  /* 縮めると文字も小さくなるので、はみ出さない範囲で少し大きくする */
+  svg.chart.fund-chart .bar-value { font-size: 16px; }
+  svg.chart.fund-chart .fund-sub-label { font-size: 15px; }
+  svg.chart.fund-chart .axis-label text { font-size: 14px; }
+
+  table.fund-flow tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-bottom: 1px solid var(--border); }
+  table.fund-flow th, table.fund-flow td { border-bottom: none; }
+  table.fund-flow th { white-space: normal; }
+  table.fund-flow td.fund-flow-note { grid-column: 1 / -1; padding-top: 0; }
+  table.fund-flow td.fund-flow-note:empty { display: none; }
+}
 
 .fund-basis summary { cursor: pointer; font-weight: 700; color: var(--navy); }
 .fund-basis[open] summary { margin-bottom: 12px; }
