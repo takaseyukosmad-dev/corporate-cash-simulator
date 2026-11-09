@@ -692,7 +692,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 
 /* スマホ幅: 比較表は項目ごとのカード型（項目名の下にケースごとの金額を縦に並べる）。
    計算の流れは説明を行の下に出す（2段）。グラフは画面の幅に収める */
-@media (max-width: 640px) {
+@media screen and (max-width: 640px) {
   table.fund-table:not(.fund-year-table) thead { display: none; }
   table.fund-table:not(.fund-year-table),
   table.fund-table:not(.fund-year-table) tbody,

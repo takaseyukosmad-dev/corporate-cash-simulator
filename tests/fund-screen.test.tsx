@@ -129,9 +129,10 @@ describe('8. 未確定の値を「保証」と表示しない', () => {
 describe('通常と払済の差', () => {
   const input = toFundInput(DEMO_FUND_FORM)!
   const html = renderToStaticMarkup(<FundResultPanel input={input} result={simulateFund(input)} showReference={false} onShowReferenceChange={() => {}} />)
-  it('比較表に「通常との差」の行がある（10年払済: 保険料は1億円少なく、返戻金は1億円少ない）', () => {
+  it('比較表に「通常との差」の行がある（10年払済: 保険料は1億6,000万円少なく、返戻金は1億5,400万円少ない）', () => {
     expect(html).toContain('通常（期間末まで払込）との差')
-    expect(html).toContain('−100,000,000円')
+    expect(html).toContain('−160,000,000円')
+    expect(html).toContain('−154,000,000円')
   })
 })
 
@@ -141,7 +142,7 @@ describe('打ち合わせ相手の依頼（2026-10-27）: 結論の文・表の�
   const html = renderToStaticMarkup(<FundResultPanel input={input} result={result} showReference={false} onShowReferenceChange={() => {}} />)
   const text = html.replace(/<[^>]+>/g, '')
   it('結論は法人現金＋法人保険返戻金＋個人DC資産の合計で、対策なしとの差を出す（決定C20）', () => {
-    expect(text).toContain('20年後、対策あり：法人現金＋法人保険返戻金＋個人DC資産で6億7,642万円となり、対策なしの場合の法人現金＋個人の報酬の手残り 4億9,782万円と比べて、1億7,860万円手残りが増えます。')
+    expect(text).toContain('20年後、対策あり：法人現金＋法人保険返戻金＋個人DC資産で7億1,482万円となり、対策なしの場合の法人現金＋個人の報酬の手残り 4億9,782万円と比べて、2億1,700万円手残りが増えます。')
     expect(text).toContain('（個人DC資産は 5,623万円、対策なしの個人の報酬の手残りは 7,782万円です。いずれも概算で、保証された金額ではありません。）')
   })
   it('対策をしないと同じなら、増える・減るとは書かない', () => {
@@ -177,7 +178,7 @@ describe('役員報酬を減額したときの個人の報酬の手残り（決�
     expect(e.payCutPrefecture).toBeDefined()
     expect(e.payCutDependents).toBeDefined()
     expect(EMPTY_FUND_FORM.payCutDependents).toBe('0')
-    expect(toFundInput(DEMO_FUND_FORM)!.payCut.officer).toEqual({ payBefore: 1_000_000, age: 50, prefecture: '東京都', dependents: 0 })
+    expect(toFundInput(DEMO_FUND_FORM)!.payCut.officer).toEqual({ payBefore: 1_000_000, age: 40, prefecture: '東京都', dependents: 0 })
   })
   it('対策なしの欄に個人の報酬の手残りが出る', () => {
     expect(result.payCutPersonal!.net).toBe(3_891_240)
@@ -208,15 +209,15 @@ describe('1年目の計算の流れ（決定C23）', () => {
     expect(flow).toContain('対策前の利益||30,000,000円')
     expect(flow).toContain('役員報酬の減額||6,000,000円')
     expect(flow).toContain('DC掛金||1,488,000円')
-    expect(flow).toContain('保険料のうち経費にできる分||5,000,000円')
+    expect(flow).toContain('保険料のうち経費にできる分||7,400,000円')
     expect(flow).toContain('会社負担の社会保険料の減少||501,660円')
-    expect(flow).toContain('課税対象利益（概算）||30,013,660円')
-    expect(flow).toContain('法人税（概算）||9,004,098円')
-    expect(flow).toContain('法人の現金の増加||16,009,562円')
+    expect(flow).toContain('課税対象利益（概算）||27,613,660円')
+    expect(flow).toContain('法人税（概算）||8,284,098円')
+    expect(flow).toContain('法人の現金の増加||10,729,562円')
   })
   it('増える・減る理由を一言ずつ添える（DCは全額経費、報酬減額で社保負担が下がると課税対象利益は増える）', () => {
     expect(flow).toContain('会社が出すDC掛金は全額経費になるので、課税対象利益を減らします。')
-    expect(flow).toContain('残りの 5,000,000円は経費にならず、法人税がかかります。')
+    expect(flow).toContain('残りの 8,600,000円は経費にならず、法人税がかかります。')
     // 計算の部品としては、役員の条件がないとき社会保険料を計算しない（画面では減額するとき必須）
     const noOfficer = { ...input, payCut: { ...input.payCut, officer: null } }
     expect(renderToStaticMarkup(<FundResultPanel input={noOfficer} result={simulateFund(noOfficer)} showReference={false} onShowReferenceChange={() => {}} />)).toContain('減額前の報酬月額などを入れると計算します')

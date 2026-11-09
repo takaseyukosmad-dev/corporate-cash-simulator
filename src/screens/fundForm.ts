@@ -89,11 +89,17 @@ export const DEMO_FUND_FORM: FundFormValues = {
   paidUpEnabled: true,
   paidUpYears: '10', // 資料の例（福利厚生保険20年継続と10年払済の比較）
   welfarePaidUpRate: '200',
+  // 報酬の減額（月50万円 × 12か月 = 年600万円）と同じ額を役員保険に回すのが比較のスタート（決定C29）
+  officerEnabled: true,
+  officerPremiumMan: '600',
+  officerDeductible: '40',
+  officerMaturityRate: '120',
+  officerPaidUpRate: '150',
   payCutEnabled: true,
   payCutOfficers: '1',
   payCutMonthly: '500,000',
   payCutPayBefore: '1,000,000',
-  payCutAge: '50',
+  payCutAge: '40',
   payCutPrefecture: '東京都',
 }
 
