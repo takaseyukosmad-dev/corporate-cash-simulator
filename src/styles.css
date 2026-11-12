@@ -815,11 +815,11 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-conditions dd { margin: 0; }
 .print-disclaimer { font-size: 11.5px; }
 /* 画面と同じ部品を、紙に収まる大きさにする */
-.print-page .conclusion { margin-bottom: 3mm; padding: 3mm 5mm; }
+.print-page .conclusion { margin-bottom: 2.5mm; padding: 2mm 5mm; }
 .print-page .conclusion-lead { font-size: 15px; }
 .print-page .conclusion-sub { font-size: 12.5px; }
 /* 横いっぱいにカードを並べる（グリッドだと注記の行が空の列を作り、カードが細くなって行が折り返していた） */
-.print-page .fund-kpis { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 2mm; }
+.print-page .fund-kpis { display: flex; flex-wrap: wrap; gap: 2mm 3mm; margin-bottom: 1mm; }
 .print-page .fund-kpi { padding: 2mm 3mm; flex: 1 1 0; min-width: 0; }
 .print-page .fund-kpi-note { flex-basis: 100%; }
 .print-page .fund-kpi-title { font-size: 14px; }
@@ -827,15 +827,16 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page .fund-kpi-value { font-size: 18px; }
 .print-page .fund-kpi-note { font-size: 11.5px; }
 .print-page svg.chart { min-width: 0; max-height: 48mm; }
-/* グラフの文字: 紙の上で本文と同じくらいの大きさ・濃さにする（グラフは約0.6倍に縮むので、元の大きさは大きめ） */
-.print-page .chart .axis-label text { font-size: 15px; fill: var(--text); }
-.print-page .chart .bar-value { font-size: 17px; font-weight: 700; fill: var(--text); }
-.print-page .fund-chart .fund-sub-label { font-size: 17px; fill: var(--text); }
-.print-page .chart .group-label { font-size: 18px; }
+/* グラフの文字（決定C32・C34）: 印刷用のグラフは約0.86倍に縮むので、紙の上で数字は約12px（9pt）、文字は約11px になる */
+.print-page .chart .axis-label text { font-size: 13.5px; fill: var(--text); }
+.print-page .chart .bar-value { font-size: 14px; font-weight: 700; fill: var(--text); }
+.print-page .fund-chart .fund-sub-label { font-size: 12.5px; fill: var(--text); }
+.print-page .chart .group-label { font-size: 13px; }
 .print-page .fund-end-label { font-size: 13.5px; }
 .print-page .fund-end-label.fl-0 { fill: var(--text); }
-.print-page .legend { margin-top: 1mm; font-size: 11.5px; line-height: 1.3; gap: 0.5mm 5mm; }
+.print-page .legend { margin-top: 1mm; font-size: 13px; line-height: 1.3; gap: 0.5mm 5mm; }
 .print-page .muted { font-size: 11.5px; }
+.print-page .chart-scroll + .muted { font-size: 13px; }
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }
 .print-page table.fund-table { font-size: 12px; }
 .print-page table.fund-table td { font-weight: 700; }

@@ -155,11 +155,11 @@ export function FundPrint({
         <div className="print-cols">
           <div>
             <h3>{years}年後の資産の比較（万円）</h3>
-            <AssetChart columns={columns} years={years} />
+            <AssetChart columns={columns} years={years} print />
           </div>
           <div>
             <h3>法人の現金の推移（増加の累計・万円）</h3>
-            <CashChart result={result} columns={columns} years={years} />
+            <CashChart result={result} columns={columns} years={years} print />
           </div>
         </div>
       </PrintPage>

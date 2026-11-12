@@ -13,14 +13,15 @@ export type AssetColumn = {
   personalNet: number // 個人の報酬の手残り（対策なしだけ。決定C27）
 }
 
+// 印刷用（決定C32・C34）: 紙の上で文字が大きく見えるよう、グラフの枠（viewBox）を小さくして縮み方を減らす。
+// 文字の大きさは styles.css の .print-page の指定。枠が小さい分、棒を細くし、余白を広げて文字が重ならないようにする
+const ASSET_SCREEN = { width: 720, height: 340, left: 64, right: 16, top: 24, bottom: 64, maxBar: 56, subY: 16, groupY: 40 }
+const ASSET_PRINT = { width: 560, height: 210, left: 68, right: 8, top: 26, bottom: 46, maxBar: 46, subY: 16, groupY: 36 }
+
 // 比較期間末の資産。各ケースで「法人（現金＋保険）」の積み上げ棒と、「個人（DC＋報酬の手残り）」の積み上げ棒を離して並べる
-export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; years: number }) {
-  const width = 720
-  const height = 340
-  const left = 64
-  const top = 24
-  const bottom = 64
-  const plotW = width - left - 16
+export function AssetBarChart({ columns, years, print = false }: { columns: AssetColumn[]; years: number; print?: boolean }) {
+  const { width, height, left, right, top, bottom, maxBar, subY, groupY } = print ? ASSET_PRINT : ASSET_SCREEN
+  const plotW = width - left - right
   const plotH = height - top - bottom
   const maxValue = Math.max(1, ...columns.map((c) => Math.max(0, c.cash) + Math.max(0, c.insurance ?? 0)), ...columns.map((c) => c.dcAsset + c.personalNet))
   const minValue = Math.min(0, ...columns.map((c) => c.cash))
@@ -30,7 +31,7 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
   const ticks: number[] = []
   for (let v = yBottom; v <= yTop + 1e-6; v += step) ticks.push(v)
   const slot = plotW / columns.length
-  const barW = Math.min(56, slot * 0.34)
+  const barW = Math.min(maxBar, slot * 0.34)
   const label = `${years}年後の資産。` + columns.map((c) => `${c.label}: 法人の現金${formatMan(c.cash)}万円、法人保有保険${c.insurance === null ? '未入力' : `${formatMan(c.insurance)}万円`}、DC加入者資産${formatMan(c.dcAsset)}万円${c.personalNet > 0 ? `、個人の報酬の手残り${formatMan(c.personalNet)}万円` : ''}`).join('。')
 
   return (
@@ -42,7 +43,7 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
       </g>
       <g className="axis-label">
         {ticks.map((v) => (
-          <text key={v} x={left - 8} y={y(v) + 4} textAnchor="end">
+          <text key={v} x={left - 8} y={y(v) + 5} textAnchor="end">
             {formatMan(v)}
           </text>
         ))}
@@ -72,13 +73,13 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
                 {formatMan(c.dcAsset + c.personalNet)}
               </text>
             )}
-            <text className="fund-sub-label" x={corpX + barW / 2} y={top + plotH + 16} textAnchor="middle">
+            <text className="fund-sub-label" x={corpX + barW / 2} y={top + plotH + subY} textAnchor="middle">
               法人
             </text>
-            <text className="fund-sub-label" x={dcX + (barW * 0.8) / 2} y={top + plotH + 16} textAnchor="middle">
+            <text className="fund-sub-label" x={dcX + (barW * 0.8) / 2} y={top + plotH + subY} textAnchor="middle">
               個人
             </text>
-            <text className="group-label" x={cx} y={top + plotH + 40} textAnchor="middle">
+            <text className="group-label" x={cx} y={top + plotH + groupY} textAnchor="middle">
               {c.label}
             </text>
           </g>
@@ -92,13 +93,11 @@ export function AssetBarChart({ columns, years }: { columns: AssetColumn[]; year
 export type CashSeries = { key: string; label: string; className: string; values: number[] } // values[i] = i+1年目末
 
 // 法人の現金（増加の累計）の年次推移。保険の解約返戻金は途中の年の返戻率がないため描かない
-export function CashLineChart({ series, years }: { series: CashSeries[]; years: number }) {
-  const width = 720
-  const height = 320
-  const left = 64
-  const right = 140
-  const top = 20
-  const bottom = 40
+const CASH_SCREEN = { width: 720, height: 320, left: 64, right: 140, top: 20, bottom: 40, xLabelY: 22, labelGap: 18 }
+const CASH_PRINT = { width: 560, height: 210, left: 68, right: 168, top: 14, bottom: 30, xLabelY: 22, labelGap: 17 }
+
+export function CashLineChart({ series, years, print = false }: { series: CashSeries[]; years: number; print?: boolean }) {
+  const { width, height, left, right, top, bottom, xLabelY, labelGap } = print ? CASH_PRINT : CASH_SCREEN
   const plotW = width - left - right
   const plotH = height - top - bottom
   const all = series.flatMap((s) => s.values)
@@ -115,7 +114,7 @@ export function CashLineChart({ series, years }: { series: CashSeries[]; years: 
   if (xTicks[xTicks.length - 1] !== years) xTicks.push(years)
   const labels = spreadLabels(
     series.map((s) => ({ s, y: y(s.values[s.values.length - 1]) + 5 })),
-    18,
+    labelGap,
   )
   const ariaLabel = `法人の現金（増加の累計）の推移。${years}年後に` + series.map((s) => `${s.label}${formatMan(s.values[s.values.length - 1])}万円`).join('、')
 
@@ -128,12 +127,12 @@ export function CashLineChart({ series, years }: { series: CashSeries[]; years: 
       </g>
       <g className="axis-label">
         {ticks.map((v) => (
-          <text key={v} x={left - 8} y={y(v) + 4} textAnchor="end">
+          <text key={v} x={left - 8} y={y(v) + 5} textAnchor="end">
             {formatMan(v)}
           </text>
         ))}
         {xTicks.map((t) => (
-          <text key={t} x={x(t)} y={top + plotH + 22} textAnchor="middle">
+          <text key={t} x={x(t)} y={top + plotH + xLabelY} textAnchor="middle">
             {t === years ? `${t}年` : t}
           </text>
         ))}

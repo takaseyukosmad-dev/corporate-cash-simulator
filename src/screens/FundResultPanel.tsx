@@ -456,11 +456,12 @@ export function FirstYearFlow({ columns, input, result }: { columns: Column[]; i
 }
 
 // 期間末の資産のグラフと凡例
-export function AssetChart({ columns, years }: { columns: Column[]; years: number }) {
+export function AssetChart({ columns, years, print = false }: { columns: Column[]; years: number; print?: boolean }) {
   return (
     <>
       <div className="chart-scroll">
         <AssetBarChart
+          print={print}
           years={years}
           columns={columns.map((c) => ({
             label: c.key === 'base' ? '対策なし' : (c.scenario?.label ?? ''),
@@ -485,12 +486,13 @@ export function AssetChart({ columns, years }: { columns: Column[]; years: numbe
 }
 
 // 法人の現金の推移のグラフと注記
-export function CashChart({ result, columns, years }: { result: FundResult; columns: Column[]; years: number }) {
+export function CashChart({ result, columns, years, print = false }: { result: FundResult; columns: Column[]; years: number; print?: boolean }) {
   const scenarios = columns.flatMap((c) => (c.scenario ? [c.scenario] : []))
   return (
     <>
       <div className="chart-scroll">
         <CashLineChart
+          print={print}
           years={years}
           series={[
             { key: 'base', label: '対策なし', className: 'fl-0', values: result.base.rows.map((r) => r.cashCumulative) },
