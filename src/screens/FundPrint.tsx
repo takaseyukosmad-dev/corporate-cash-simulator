@@ -26,6 +26,19 @@ function printTitle(companyName: string): string {
   return name ? `${name}様　キャッシュ増加のご提案` : 'キャッシュ増加のご提案'
 }
 
+// 1ページ目「お金の流れ」の矢印（決定C35）。上に何のお金かを書き、下に太い矢印を描く
+function FlowArrow({ label }: { label: string }) {
+  return (
+    <span className="arrow">
+      <span className="arrow-label">{label}</span>
+      <svg viewBox="0 0 160 22" aria-hidden="true">
+        <rect x="0" y="7" width="138" height="8" rx="1" />
+        <polygon points="132,0 160,11 132,22" />
+      </svg>
+    </span>
+  )
+}
+
 function PrintPage({ no, children }: { no: number; children: ReactNode }) {
   return (
     <section className="print-page">
@@ -142,9 +155,9 @@ export function FundPrint({
         {/* 下半分の余白に、横いっぱいの大きさで出す（決定C32） */}
         <h3>お金の流れ（イメージ）</h3>
         <div className="print-flow">
-          <div><span className="box">会社</span><span className="arrow">法人税 ▶</span><span className="box">国</span><span className="note">戻ってこない</span></div>
-          <div><span className="box">会社</span><span className="arrow">保険料 ▶</span><span className="box ins">保険</span><span className="note">解約返戻金は会社の資産</span></div>
-          <div><span className="box">会社</span><span className="arrow">DC掛金 ▶</span><span className="box dc">加入者個人</span><span className="note">会社の資産ではない</span></div>
+          <div><span className="box">会社</span><FlowArrow label="法人税" /><span className="box">国</span><span className="note">戻ってこない</span></div>
+          <div><span className="box">会社</span><FlowArrow label="保険料" /><span className="box ins">保険</span><span className="note">解約返戻金は会社の資産</span></div>
+          <div><span className="box">会社</span><FlowArrow label="DC掛金" /><span className="box dc">加入者個人</span><span className="note">会社の資産ではない</span></div>
         </div>
       </PrintPage>
 

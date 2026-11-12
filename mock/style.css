@@ -807,7 +807,9 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-flow .box { min-width: 40mm; padding: 3.5mm 5mm; border-width: 2px !important; text-align: center; font-weight: 700; color: var(--navy); background: var(--navy-tint); border: 1px solid var(--navy); border-radius: 4px; }
 .print-flow .box.ins { color: #a85a12; background: var(--accent-tint); border-color: var(--fund-ins); }
 .print-flow .box.dc { color: #0b7c87; background: #e3f6f8; border-color: var(--fund-dc); }
-.print-flow .arrow { min-width: 34mm; font-weight: 700; color: var(--muted); }
+.print-flow .arrow { display: flex; flex-direction: column; align-items: center; gap: 1mm; width: 44mm; font-weight: 700; color: var(--navy); }
+.print-flow .arrow-label { line-height: 1.2; }
+.print-flow .arrow svg { display: block; width: 44mm; height: 6mm; fill: var(--navy); }
 .print-flow .note { color: var(--muted); }
 .print-conditions { margin: 0; display: grid; gap: 1mm; }
 .print-conditions div { display: grid; grid-template-columns: 44mm 1fr; gap: 2mm; border-bottom: 1px solid var(--border); padding-bottom: 0.8mm; }
