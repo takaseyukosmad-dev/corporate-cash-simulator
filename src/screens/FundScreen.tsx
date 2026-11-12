@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { simulateFund } from '../calc/fundFormation/simulateFund.ts'
 import type { FundInput, FundResult } from '../calc/fundFormation/types.ts'
 import { formatNumberText } from '../shared/numberInput.ts'
 import { FundInputPanel } from './FundInputPanel.tsx'
 import { FundPrint } from './FundPrint.tsx'
 import { FundResultPanel } from './FundResultPanel.tsx'
+import { makePdf, pdfFileName, savePdf } from './pdfExport.ts'
 import { DEMO_FUND_FORM, EMPTY_FUND_FORM, type FundField, type FundFormValues, toFundInput, validateFundForm } from './fundForm.ts'
 
 // キャッシュ増加シミュレーター。入力を変えるとすぐに計算し直す。入力内容は保存しない
@@ -12,6 +14,9 @@ import { DEMO_FUND_FORM, EMPTY_FUND_FORM, type FundField, type FundFormValues, t
 const AMOUNT_FIELDS: FundField[] = ['annualProfitMan', 'dcMonthly', 'welfarePremiumMan', 'officerPremiumMan', 'payCutMonthly', 'payCutTotalMan', 'payCutPayBefore']
 
 type Computed = { input: FundInput; result: FundResult }
+
+// PDF を作る状態（決定C33）。作り終えたら、もう一度押して保存する（iPad・携帯の共有の画面は、押した直後でないと開けないため）
+type PdfState = { status: 'idle' } | { status: 'making' } | { status: 'ready'; file: File; key: string } | { status: 'error' }
 
 export function FundScreen() {
   const [values, setValues] = useState<FundFormValues>(EMPTY_FUND_FORM)
@@ -32,6 +37,10 @@ export function FundScreen() {
     const input = toFundInput(values)
     return input ? { input, result: simulateFund(input) } : null
   }, [values])
+  const [pdf, setPdf] = useState<PdfState>({ status: 'idle' })
+  // 入力・参考総額の表示を変えたら、作った PDF は使わない（作り直す）
+  const pdfKey = JSON.stringify([values, showReference])
+  const pdfReady = pdf.status === 'ready' && pdf.key === pdfKey ? pdf.file : null
   if (current && current !== lastComputed) setLastComputed(current)
   const shown = current ?? lastComputed
 
@@ -53,6 +62,23 @@ export function FundScreen() {
     setValues(DEMO_FUND_FORM)
     setTouched(new Set())
     setIsDemo(true)
+  }
+  async function handlePdf() {
+    if (pdfReady) {
+      await savePdf(pdfReady)
+      return
+    }
+    // 作成日を今日にしてから写す
+    flushSync(() => {
+      setPrintDate(new Date())
+      setPdf({ status: 'making' })
+    })
+    try {
+      const file = await makePdf(pdfFileName(values.companyName, new Date()))
+      setPdf({ status: 'ready', file, key: pdfKey })
+    } catch {
+      setPdf({ status: 'error' })
+    }
   }
   function reset() {
     setValues(EMPTY_FUND_FORM)
@@ -81,8 +107,18 @@ export function FundScreen() {
             <button type="button" className="btn btn-primary btn-small" onClick={() => window.print()} disabled={!current}>
               印刷する
             </button>
+            <button
+              type="button"
+              className={pdfReady ? 'btn btn-primary btn-small' : 'btn btn-outline btn-small'}
+              onClick={handlePdf}
+              disabled={!current || pdf.status === 'making'}
+            >
+              {pdf.status === 'making' ? 'PDFを作成中…' : pdfReady ? 'PDFを保存する' : 'PDFを作る'}
+            </button>
           </div>
         </div>
+        {pdfReady && <p className="notice fund-pdf-note">PDFができました。「PDFを保存する」を押すと保存できます（iPad・携帯では、開いた画面で「ファイルに保存」などを選んでください）。</p>}
+        {pdf.status === 'error' && <p className="warning">PDFを作れませんでした。もう一度押すか、パソコンの「印刷する」からPDFに保存してください。</p>}
 
         <div className="sim-layout">
           <FundInputPanel values={values} onChange={handleChange} onBlur={handleBlur} errors={errors} />

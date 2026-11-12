@@ -693,15 +693,15 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 /* スマホ幅: 比較表は項目ごとのカード型（項目名の下にケースごとの金額を縦に並べる）。
    計算の流れは説明を行の下に出す（2段）。グラフは画面の幅に収める */
 @media screen and (max-width: 640px) {
-  table.fund-table:not(.fund-year-table) thead { display: none; }
-  table.fund-table:not(.fund-year-table),
-  table.fund-table:not(.fund-year-table) tbody,
-  table.fund-table:not(.fund-year-table) tr,
-  table.fund-table:not(.fund-year-table) th,
-  table.fund-table:not(.fund-year-table) td { display: block; width: 100%; }
-  table.fund-table:not(.fund-year-table) tr { border-bottom: 1px solid var(--border); padding: 10px 0; }
-  table.fund-table:not(.fund-year-table) tbody th { border-bottom: none; font-weight: 700; padding: 0 0 6px; }
-  table.fund-table:not(.fund-year-table) td {
+  .fund-main table.fund-table:not(.fund-year-table) thead { display: none; }
+  .fund-main table.fund-table:not(.fund-year-table),
+  .fund-main table.fund-table:not(.fund-year-table) tbody,
+  .fund-main table.fund-table:not(.fund-year-table) tr,
+  .fund-main table.fund-table:not(.fund-year-table) th,
+  .fund-main table.fund-table:not(.fund-year-table) td { display: block; width: 100%; }
+  .fund-main table.fund-table:not(.fund-year-table) tr { border-bottom: 1px solid var(--border); padding: 10px 0; }
+  .fund-main table.fund-table:not(.fund-year-table) tbody th { border-bottom: none; font-weight: 700; padding: 0 0 6px; }
+  .fund-main table.fund-table:not(.fund-year-table) td {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -710,7 +710,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
     padding: 3px 8px;
     border-radius: 6px;
   }
-  table.fund-table:not(.fund-year-table) td::before {
+  .fund-main table.fund-table:not(.fund-year-table) td::before {
     content: attr(data-label);
     white-space: normal;
     min-width: 0;
@@ -719,20 +719,20 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
     font-weight: 400;
     text-align: left;
   }
-  table.fund-table:not(.fund-year-table) tr.group { border-bottom: none; padding: 16px 0 0; }
-  table.fund-table:not(.fund-year-table) tr.group th { padding: 8px 10px; border-radius: 6px; }
+  .fund-main table.fund-table:not(.fund-year-table) tr.group { border-bottom: none; padding: 16px 0 0; }
+  .fund-main table.fund-table:not(.fund-year-table) tr.group th { padding: 8px 10px; border-radius: 6px; }
 
-  svg.chart.fund-chart { min-width: 0; }
+  .fund-main svg.chart.fund-chart { min-width: 0; }
   /* 縮めると文字も小さくなるので、はみ出さない範囲で少し大きくする */
-  svg.chart.fund-chart .bar-value { font-size: 16px; }
-  svg.chart.fund-chart .fund-sub-label { font-size: 15px; }
-  svg.chart.fund-chart .axis-label text { font-size: 14px; }
+  .fund-main svg.chart.fund-chart .bar-value { font-size: 16px; }
+  .fund-main svg.chart.fund-chart .fund-sub-label { font-size: 15px; }
+  .fund-main svg.chart.fund-chart .axis-label text { font-size: 14px; }
 
-  table.fund-flow tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-bottom: 1px solid var(--border); }
-  table.fund-flow th, table.fund-flow td { border-bottom: none; }
-  table.fund-flow th { white-space: normal; }
-  table.fund-flow td.fund-flow-note { grid-column: 1 / -1; padding-top: 0; }
-  table.fund-flow td.fund-flow-note:empty { display: none; }
+  .fund-main table.fund-flow tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-bottom: 1px solid var(--border); }
+  .fund-main table.fund-flow th, .fund-main table.fund-flow td { border-bottom: none; }
+  .fund-main table.fund-flow th { white-space: normal; }
+  .fund-main table.fund-flow td.fund-flow-note { grid-column: 1 / -1; padding-top: 0; }
+  .fund-main table.fund-flow td.fund-flow-note:empty { display: none; }
 }
 
 .fund-basis summary { cursor: pointer; font-weight: 700; color: var(--navy); }
@@ -848,3 +848,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
 .print-page table.fund-flow td { padding: 1mm 2mm; line-height: 1.4; }
 .print-page .fund-flow-note { font-size: 11.5px; line-height: 1.4; }
 .print-page table.fund-flow th { white-space: normal; width: 24%; }
+
+/* PDF を作るあいだだけ、印刷用のページを画面の外に出して写す（決定C33） */
+.pdf-capture .print-report { display: block; position: absolute; left: -20000px; top: 0; }
+.fund-pdf-note { margin: 0 0 16px; }
