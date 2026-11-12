@@ -57,7 +57,7 @@ export type PayNet = {
 }
 
 export type FundInput = {
-  annualProfit: number // 年間法人利益（現行の役員報酬を払った後、追加施策の前）。毎年同じとする
+  annualProfit: number // 年間法人利益（税引前。現行の役員報酬を払った後、追加施策の前）。毎年同じとする
   // 年ごとの利益（index 0 = 1年目）。将来の年別入力のため。あれば annualProfit の代わりに使い、足りない年は annualProfit
   profitByYear?: number[]
   years: number // 比較期間（年）

@@ -110,7 +110,7 @@ const COMPANY_NAME_MAX = 50
 type Rule = { label: string; min: number; max: number; decimals: number; optional?: boolean }
 
 const RULES: Partial<Record<FundField, Rule>> = {
-  annualProfitMan: { label: '年間法人利益', min: -999_999, max: 999_999, decimals: 1 },
+  annualProfitMan: { label: '年間法人利益（税引前）', min: -999_999, max: 999_999, decimals: 1 },
   years: { label: '比較期間', min: 1, max: 50, decimals: 0 },
   corporateTaxRate: { label: '法人実効税率', min: 0, max: 60, decimals: 2 },
   dcMembers: { label: 'DC加入人数', min: 0, max: 1000, decimals: 0 },

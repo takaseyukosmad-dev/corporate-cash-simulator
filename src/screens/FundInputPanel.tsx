@@ -165,10 +165,10 @@ export function FundInputPanel(props: Props) {
         </div>
         <Num
           id="annualProfitMan"
-          label="年間法人利益"
+          label="年間法人利益（税引前）"
           unit="万円"
           decimal
-          help="現在の役員報酬を払った後で、今回の対策（DC・保険・報酬減額）をする前の利益です。"
+          help="現在の役員報酬を払った後で、今回の対策（DC・保険・報酬減額）をする前の税引前利益です。"
           props={props}
         />
         <Num id="years" label="比較期間" unit="年" help="例: 5・10・15・20・25・30年。1〜50年の整数を入れてください。" props={props} />

@@ -94,7 +94,7 @@ export function FundScreen() {
           ) : (
             <div className="result-panel">
               <section className="card empty-state">
-                <p>左の条件（年間法人利益など）を入力すると、比較結果がここに表示されます。</p>
+                <p>左の条件（年間法人利益（税引前）など）を入力すると、比較結果がここに表示されます。</p>
                 <button type="button" className="btn btn-outline" onClick={loadDemo}>
                   デモ用の仮データで試す
                 </button>

@@ -245,7 +245,7 @@ export function BasisList({ input, result }: { input: FundInput; result: FundRes
   const dc = input.dc
   return (
       <ul className="plain">
-        <li>年間法人利益 P = {formatYen(input.annualProfit)}（現在の役員報酬を払った後、対策前）。{input.years}年間毎年同じとしています。</li>
+        <li>年間法人利益（税引前） P = {formatYen(input.annualProfit)}（現在の役員報酬を払った後、対策前）。{input.years}年間毎年同じとしています。</li>
         <li>
           役員報酬の減額 R = {input.payCut.officers}人 × {formatYen(input.payCut.monthlyCutPerOfficer)} × 12か月 = {formatYen(annualPayCut(input))}／年
           {result.socialInsuranceComputed ? `、会社負担の社会保険料の減少 S = ${formatYen(result.annualSocialInsuranceSaving)}／年（令和8年度の料率。役員個人の負担分も同じ ${formatYen(result.annualPersonalSocialInsuranceSaving)}／年減りますが、会社の現金には入れません）` : '、会社負担の社会保険料の減少 S は計算していません（0円）'}

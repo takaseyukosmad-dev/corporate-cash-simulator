@@ -54,7 +54,7 @@ function Conditions({ companyName, input }: { companyName: string; input: FundIn
   const { dc, payCut } = input
   const rows: [string, string][] = [
     ['法人名', companyName.trim() || '（空欄）'],
-    ['年間法人利益', formatManYen(input.annualProfit)],
+    ['年間法人利益（税引前）', formatManYen(input.annualProfit)],
     ['比較期間', `${input.years}年`],
     ['法人実効税率（概算）', formatRate(input.corporateTaxRate)],
     [

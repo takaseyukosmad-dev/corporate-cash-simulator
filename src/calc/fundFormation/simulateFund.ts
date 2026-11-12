@@ -256,7 +256,7 @@ function warningsFor(input: FundInput, base: BaseYearRow[], scenarios: ScenarioR
   const profits = base.map((r) => r.taxableIncome)
   const allPositive = profits.every((p) => p > 0)
   if (!allPositive) {
-    w.push('年間法人利益が0円以下の年があります。法人税は0円として計算しています（繰越欠損金などは計算していません）。')
+    w.push('年間法人利益（税引前）が0円以下の年があります。法人税は0円として計算しています（繰越欠損金などは計算していません）。')
   }
   for (const s of scenarios) {
     const minusYear = s.rows.find((r) => r.taxableIncome < 0)
@@ -272,7 +272,7 @@ function warningsFor(input: FundInput, base: BaseYearRow[], scenarios: ScenarioR
     (input.welfare.enabled ? input.welfare.annualPremium : 0) +
     (input.officer.enabled ? input.officer.annualPremium : 0)
   if (allPositive && profits.some((p) => outflow > p + annualPayCut(input))) {
-    w.push('保険料とDCの会社負担の合計が、年間法人利益と役員報酬の減額の合計を超えています。払い続けられるか確認してください。')
+    w.push('保険料とDCの会社負担の合計が、年間法人利益（税引前）と役員報酬の減額の合計を超えています。払い続けられるか確認してください。')
   }
   if (usesInsurance(input)) {
     const y = input.paidUpYears
