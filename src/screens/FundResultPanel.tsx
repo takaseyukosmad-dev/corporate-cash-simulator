@@ -59,7 +59,22 @@ export function Kpis({ columns, years }: { columns: Column[]; years: number }) {
 
 type Row = { label: string; pick: (c: Column) => string; note?: string }
 
-export function CompareTable({ columns, years, showReference, personalSi }: { columns: Column[]; years: number; showReference: boolean; personalSi: number }) {
+// part: 印刷で表を2ページに分けるときに使う（'main' = 保険（法人契約）より前、'insurance' = 保険（法人契約）だけ。決定C32）
+const INSURANCE_GROUP = '保険（法人契約）'
+
+export function CompareTable({
+  columns,
+  years,
+  showReference,
+  personalSi,
+  part = 'all',
+}: {
+  columns: Column[]
+  years: number
+  showReference: boolean
+  personalSi: number
+  part?: 'all' | 'main' | 'insurance'
+}) {
   const scenarioOnly = (f: (s: ScenarioResult) => string) => (c: Column) => (c.scenario ? f(c.scenario) : '—')
   const first = (f: (r: FundYearRow) => number) => scenarioOnly((s) => formatYen(f(s.firstYear)))
   const insuranceText = (pick: (o: InsuranceOutcome) => string) => (o: InsuranceOutcome | null) => (o ? pick(o) : '使わない')
@@ -131,7 +146,7 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
       ],
     },
     {
-      title: '保険（法人契約）',
+      title: INSURANCE_GROUP,
       rows: [
         { label: '福利厚生保険: 払込年数', pick: scenarioOnly((s) => insuranceText((o) => `${o.premiumYears}年`)(s.welfare)) },
         { label: '福利厚生保険: 払った保険料の合計', pick: scenarioOnly((s) => insuranceText((o) => formatYen(o.premiumTotal))(s.welfare)) },
@@ -154,7 +169,7 @@ export function CompareTable({ columns, years, showReference, personalSi }: { co
           </tr>
         </thead>
         <tbody>
-          {groups.map((g) => [
+          {groups.filter((g) => part === 'all' || (part === 'insurance') === (g.title === INSURANCE_GROUP)).map((g) => [
             <tr key={g.title} className="group">
               <th colSpan={columns.length + 1}>{g.title}</th>
             </tr>,

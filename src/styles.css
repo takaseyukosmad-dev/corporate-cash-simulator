@@ -755,8 +755,11 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
   overflow: hidden;
   break-after: page;
   background: #fff;
+  /* 印刷は文字を濃く・大きくする（決定C32）。灰色の文字も黒に近い色にする */
+  --text: #111820;
+  --muted: #2f3843;
   color: var(--text);
-  font-size: 10.5px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 .print-page:last-child { break-after: auto; }
@@ -774,7 +777,7 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
   background: var(--brand-navy);
   border-top: 0.7mm solid var(--c3);
   color: #c9d3ea;
-  font-size: 9px;
+  font-size: 10px;
 }
 .print-footer img { height: 5mm; width: auto; }
 .print-page-no { margin-left: auto; }
@@ -788,49 +791,60 @@ table.fund-table tr.stop th, table.fund-table tr.stop td { background: var(--acc
   background: var(--brand-navy);
   border-bottom: 1mm solid var(--c3);
 }
-.print-title h1 { margin: 0; color: #fff; font-size: 20px; }
-.print-title p { margin: 0; flex-shrink: 0; color: #dce8fb; font-size: 10px; }
-.print-heading { margin: 0 0 3mm; padding-bottom: 1mm; font-size: 15px; color: var(--navy); border-bottom: 1.5px solid var(--navy); }
+.print-title h1 { margin: 0; color: #fff; font-size: 24px; }
+.print-title p { margin: 0; flex-shrink: 0; color: #fff; font-size: 12px; }
+.print-heading { margin: 0 0 3mm; padding-bottom: 1mm; font-size: 18px; color: var(--navy); border-bottom: 1.5px solid var(--navy); }
 .print-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-.print-flow-cols { columns: 2; column-gap: 6mm; font-size: 10px; line-height: 1.45; }
+.print-flow-cols { columns: 2; column-gap: 8mm; font-size: 11.5px; line-height: 1.45; }
 .print-flow-cols h3 { break-after: avoid; }
 .print-flow-cols table, .print-flow-cols li, .print-flow-cols .warning, .print-flow-cols dl > div { break-inside: avoid; }
 .print-flow-cols > :first-child { margin-top: 0; }
-.print-page h3 { margin: 3mm 0 1mm; font-size: 12px; color: var(--navy); }
+.print-page h3 { margin: 3mm 0 1.5mm; font-size: 14.5px; color: var(--navy); }
 .print-page p { margin: 0 0 1.5mm; }
 .print-page ul.plain li { margin-bottom: 1mm; }
-.print-flow div { display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; }
-.print-flow .box { min-width: 20mm; padding: 1.5mm 3mm; text-align: center; font-weight: 700; color: var(--navy); background: var(--navy-tint); border: 1px solid var(--navy); border-radius: 4px; }
+.print-flow { font-size: 19px; }
+.print-flow div { display: flex; align-items: center; gap: 6mm; margin-bottom: 5mm; }
+.print-flow .box { min-width: 40mm; padding: 3.5mm 5mm; border-width: 2px !important; text-align: center; font-weight: 700; color: var(--navy); background: var(--navy-tint); border: 1px solid var(--navy); border-radius: 4px; }
 .print-flow .box.ins { color: #a85a12; background: var(--accent-tint); border-color: var(--fund-ins); }
 .print-flow .box.dc { color: #0b7c87; background: #e3f6f8; border-color: var(--fund-dc); }
-.print-flow .arrow { font-weight: 700; color: var(--muted); }
+.print-flow .arrow { min-width: 34mm; font-weight: 700; color: var(--muted); }
 .print-flow .note { color: var(--muted); }
 .print-conditions { margin: 0; display: grid; gap: 1mm; }
-.print-conditions div { display: grid; grid-template-columns: 30mm 1fr; gap: 2mm; border-bottom: 1px solid var(--border); padding-bottom: 0.8mm; }
+.print-conditions div { display: grid; grid-template-columns: 44mm 1fr; gap: 2mm; border-bottom: 1px solid var(--border); padding-bottom: 0.8mm; }
 .print-conditions dt { font-weight: 700; color: var(--navy); }
 .print-conditions dd { margin: 0; }
-.print-disclaimer { font-size: 9.5px; }
+.print-disclaimer { font-size: 11.5px; }
 /* 画面と同じ部品を、紙に収まる大きさにする */
 .print-page .conclusion { margin-bottom: 3mm; padding: 3mm 5mm; }
-.print-page .conclusion-lead { font-size: 13px; }
-.print-page .conclusion-sub { font-size: 11px; }
+.print-page .conclusion-lead { font-size: 15px; }
+.print-page .conclusion-sub { font-size: 12.5px; }
 /* 横いっぱいにカードを並べる（グリッドだと注記の行が空の列を作り、カードが細くなって行が折り返していた） */
 .print-page .fund-kpis { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 2mm; }
 .print-page .fund-kpi { padding: 2mm 3mm; flex: 1 1 0; min-width: 0; }
 .print-page .fund-kpi-note { flex-basis: 100%; }
-.print-page .fund-kpi-value { font-size: 16px; }
-.print-page .fund-kpi-note { font-size: 9.5px; }
-.print-page svg.chart { min-width: 0; max-height: 44mm; }
-.print-page .legend { margin-top: 1mm; font-size: 9.5px; gap: 1mm 4mm; }
-.print-page .muted { font-size: 9.5px; }
+.print-page .fund-kpi-title { font-size: 14px; }
+.print-page .fund-kpi-caption, .print-page .fund-kpi-sub, .print-page .fund-kpi-diff { font-size: 12.5px; }
+.print-page .fund-kpi-value { font-size: 18px; }
+.print-page .fund-kpi-note { font-size: 11.5px; }
+.print-page svg.chart { min-width: 0; max-height: 48mm; }
+/* グラフの文字: 紙の上で本文と同じくらいの大きさ・濃さにする（グラフは約0.6倍に縮むので、元の大きさは大きめ） */
+.print-page .chart .axis-label text { font-size: 15px; fill: var(--text); }
+.print-page .chart .bar-value { font-size: 17px; font-weight: 700; fill: var(--text); }
+.print-page .fund-chart .fund-sub-label { font-size: 17px; fill: var(--text); }
+.print-page .chart .group-label { font-size: 18px; }
+.print-page .fund-end-label { font-size: 13.5px; }
+.print-page .fund-end-label.fl-0 { fill: var(--text); }
+.print-page .legend { margin-top: 1mm; font-size: 11.5px; line-height: 1.3; gap: 0.5mm 5mm; }
+.print-page .muted { font-size: 11.5px; }
 .print-page .fund-table-wrap { overflow: visible; margin: 0; }
-.print-page table.fund-table { font-size: 9.5px; }
+.print-page table.fund-table { font-size: 12px; }
+.print-page table.fund-table td { font-weight: 700; }
 .print-page table.fund-table th,
-.print-page table.fund-table td { padding: 0.3mm 2mm; line-height: 1.3; }
-.print-page table.fund-table thead th { font-size: 9.5px; }
-.print-page .warning { padding: 1.5mm 3mm; font-size: 9.5px; }
-.print-page table.fund-flow { font-size: 9px; }
+.print-page table.fund-table td { padding: 0.3mm 3mm; line-height: 1.3; }
+.print-page table.fund-table thead th { font-size: 12px; }
+.print-page .warning { padding: 1.5mm 3mm; font-size: 11.5px; }
+.print-page table.fund-flow { font-size: 13px; }
 .print-page table.fund-flow th,
-.print-page table.fund-flow td { padding: 0.3mm 1.5mm; line-height: 1.35; }
-.print-page .fund-flow-note { font-size: 8px; line-height: 1.35; }
+.print-page table.fund-flow td { padding: 1mm 2mm; line-height: 1.4; }
+.print-page .fund-flow-note { font-size: 11.5px; line-height: 1.4; }
 .print-page table.fund-flow th { white-space: normal; width: 24%; }

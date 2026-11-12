@@ -7,11 +7,11 @@ import { columnsFor, usesInsurance } from './fundColumns.ts'
 import { AssetChart, AssumptionList, BasisList, CashChart, CompareTable, Conclusion, FirstYearFlow, Kpis, WarningList } from './FundResultPanel.tsx'
 
 // 印刷用の表示（決定C14・C17・C18）。画面には出さず、印刷するときだけ使う（styles.css の @media print）
-// 元のアプリ（役員報酬・退職金 比較シミュレーター）の提案資料PDFを参考にした A4横4ページ。年次の明細は入れない
+// 元のアプリ（役員報酬・退職金 比較シミュレーター）の提案資料PDFを参考にした A4横5ページ（決定C32）。年次の明細は入れない
 
-const PAGES = 4
+const PAGES = 5
 
-// 4ページ目「ご注意」（2026-10-26 確認済みの文面）
+// 5ページ目「ご注意」（2026-10-26 確認済みの文面）
 const DISCLAIMER = [
   '本資料は、ご入力いただいた条件と作成日時点の前提に基づく簡易的な試算であり、将来の金額や効果を保証するものではありません。',
   '法人税・損金算入額は、法人実効税率と損金割合による概算です。税率の段階・繰越欠損金・税額控除などは計算していません。',
@@ -137,13 +137,14 @@ export function FundPrint({
                 <li>対策あり：DC・役員報酬の見直しを組み合わせた場合</li>
               )}
             </ul>
-            <h3>お金の流れ（イメージ）</h3>
-            <div className="print-flow">
-              <div><span className="box">会社</span><span className="arrow">法人税 ▶</span><span className="box">国</span><span className="note">戻ってこない</span></div>
-              <div><span className="box">会社</span><span className="arrow">保険料 ▶</span><span className="box ins">保険</span><span className="note">解約返戻金は会社の資産</span></div>
-              <div><span className="box">会社</span><span className="arrow">DC掛金 ▶</span><span className="box dc">加入者個人</span><span className="note">会社の資産ではない</span></div>
-            </div>
           </div>
+        </div>
+        {/* 下半分の余白に、横いっぱいの大きさで出す（決定C32） */}
+        <h3>お金の流れ（イメージ）</h3>
+        <div className="print-flow">
+          <div><span className="box">会社</span><span className="arrow">法人税 ▶</span><span className="box">国</span><span className="note">戻ってこない</span></div>
+          <div><span className="box">会社</span><span className="arrow">保険料 ▶</span><span className="box ins">保険</span><span className="note">解約返戻金は会社の資産</span></div>
+          <div><span className="box">会社</span><span className="arrow">DC掛金 ▶</span><span className="box dc">加入者個人</span><span className="note">会社の資産ではない</span></div>
         </div>
       </PrintPage>
 
@@ -165,17 +166,33 @@ export function FundPrint({
 
       <PrintPage no={3}>
         <h2 className="print-heading">比較表</h2>
-        <CompareTable columns={columns} years={years} showReference={showReference} personalSi={result.annualPersonalSocialInsuranceSaving} />
+        <CompareTable columns={columns} years={years} showReference={showReference} personalSi={result.annualPersonalSocialInsuranceSaving} part={insurance ? 'main' : 'all'} />
       </PrintPage>
 
       <PrintPage no={4}>
-        <h2 className="print-heading">比較条件・1年目の計算の流れ・計算の根拠・前提・ご注意</h2>
+        <h2 className="print-heading">比較条件・1年目の計算の流れ</h2>
+        <div className="print-cols">
+          <div>
+            <h3>比較条件</h3>
+            <Conditions companyName={companyName} input={input} />
+          </div>
+          <div>
+            <h3>1年目の計算の流れ（{columns[1].label}）</h3>
+            <FirstYearFlow columns={columns} input={input} result={result} />
+          </div>
+        </div>
+        {insurance && (
+          <>
+            <h3>比較表（つづき）</h3>
+            <CompareTable columns={columns} years={years} showReference={showReference} personalSi={result.annualPersonalSocialInsuranceSaving} part="insurance" />
+          </>
+        )}
+      </PrintPage>
+
+      <PrintPage no={5}>
+        <h2 className="print-heading">計算の根拠・注意・前提・ご注意</h2>
         {/* 2段組みで流し込む（注意の数で長さが変わっても、左右の段に振り分けて1ページに収める） */}
         <div className="print-flow-cols">
-          <h3>比較条件</h3>
-          <Conditions companyName={companyName} input={input} />
-          <h3>1年目の計算の流れ（{columns[1].label}）</h3>
-          <FirstYearFlow columns={columns} input={input} result={result} />
           <h3>計算の根拠</h3>
           <BasisList input={input} result={result} />
           <h3>注意</h3>

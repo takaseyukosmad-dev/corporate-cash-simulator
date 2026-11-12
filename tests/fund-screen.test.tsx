@@ -250,9 +250,22 @@ describe('印刷用の表示（決定C14・C17・C18）', () => {
     )
   const html = render('サンプル商事株式会社')
   const text = html.replace(/<[^>]+>/g, ' ')
-  it('A4横の4ページで、ページ番号が付く', () => {
-    expect(html.match(/class="print-page"/g)).toHaveLength(4)
-    expect(text).toContain('4 / 4')
+  it('A4横の5ページで、ページ番号が付く（決定C32）', () => {
+    expect(html.match(/class="print-page"/g)).toHaveLength(5)
+    expect(text).toContain('5 / 5')
+  })
+  it('比較表は3ページ目、保険（法人契約）のまとまりだけ4ページ目に送る。1ページ目にお金の流れの図（決定C32）', () => {
+    const pages = html.split('class="print-page"')
+    expect(pages[1]).toContain('お金の流れ（イメージ）')
+    expect(pages[3]).toContain('対策なしとの差（対策あり − 対策なし）')
+    expect(pages[3]).not.toContain('保険（法人契約）')
+    expect(pages[4]).toContain('保険（法人契約）')
+    expect(pages[4]).not.toContain('対策なしとの差（対策あり − 対策なし）')
+    expect(pages[5]).toContain('計算の根拠')
+    // 保険を使わないときは、比較表を3ページ目にまとめて出す
+    const none = render('', toFundInput({ ...EMPTY_FUND_FORM, annualProfitMan: '3000' })!).split('class="print-page"')
+    expect(none[3]).toContain('保険（法人契約）')
+    expect(none[4]).not.toContain('fund-table')
   })
   it('タイトルに法人名と作成日が入る。空欄なら「様」を付けない', () => {
     expect(text).toContain('サンプル商事株式会社様　キャッシュ増加のご提案')
